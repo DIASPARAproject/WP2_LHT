@@ -68,7 +68,7 @@ esilv.code <- nimbleCode({
   sdsl <- sqrt(log(1 + (124/658)^2))  
   msl <- log(658) - sdsl^2/2 
   sdbsl <- sqrt(log(1 + (23/393)^2))
-  mbsl <- log(393/658) - sdbsl^2/2 #log ratio. Durif 2005, https://doi.org/10.1111/j.0022-1112.2005.00662.x
+  mbsl <- log(393/658) - sdbsl^2/2
   
   # prior temp and age slopes
   bt ~ dnorm(0,1)

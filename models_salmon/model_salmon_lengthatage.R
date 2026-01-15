@@ -1,9 +1,9 @@
 # DIASPARA WP2.2 LHT models
 # Salmon length at age model and mcmc
 
-#likelihood both age
-
 slaa.code <- nimbleCode({
+
+# likelihood both age
   
 for(i in 1:nobs){
   length_mm[i] ~ dnorm(l.mu[su[i],smo.age[i],coh[i],sex[i],g.year[i]], sd = sig.l)
@@ -33,19 +33,6 @@ for(ii in 1:njobs){
   l.mu.j[ii] <- lb.mu[suj[ii]] + exp(g[suj[ii]])*gj.year[ii]
 }
 
-# #sex likelihood
-# # for(j in 1:nobs){
-# #   #sex[j] ~ dbern(ps[1])
-# #    sex01[j] ~ dbern(ps[1])
-# #    sex[j] <- sex01[j] + 1    # 0/1 -> 1/2 for index in loop above
-# # }
-# 
-# for (j in 1:nobs) {
-#   sex[j] ~ dcat(ps[1:2])   
-# }
-# ps[1] ~ dbeta(1,1)  #prop of males (prob. to be 1)
-# ps[2] <- 1-ps[1]
-
 # spatially varying priors
 for(i in 1:nsu){
   lb.mu[i] ~ dunif(12, 20) # ~15 to 20 mm, DOI: 10.1111/j.1095-8649.2009.02497.x
@@ -56,7 +43,7 @@ for(i in 1:nsu){
   sig.par[i] ~ dlnorm(log(k.lsd), sdlog = 0.1)
 }
 
-# first year of rw for k over su:s (1 for each sex)
+# first year of rw for k over su:s (one for each sex)
 for(j in 1:nsu){
   k.year[j,1,1] ~ dnorm(k.par[j], sd = k.lsd)
   k.year[j,2,1] ~ dnorm(k.par[j], sd = k.lsd)
@@ -76,7 +63,7 @@ for(k in 1:nsu){
   }
 }
 
-#Prior for correlation matrix (LKJ prior)
+# Prior for correlation matrix (LKJ prior)
 phi[1]  <- eta + (nsu - 2)/2
 corY[1] ~ dbeta(phi[1], phi[1])
 r12   <- 2 * corY[1] - 1
@@ -106,10 +93,10 @@ for (m in 2:(nsu-1)) {
 Rnew[1:nsu,1:nsu] <- t(R[1:nsu,1:nsu]) %*% R[1:nsu,1:nsu]
 
 # # g, k & linf values (g and linf from fb)
-g.lsd <- sqrt(log(1 + (5^2) / (50^2))) # sqrt of variance (= sd) of the lognormal distr. 50 and 10 is arbitrary atm.
-g.lmean <- log(50) - 0.5 * log(g.lsd)^2  # mean of the lognorm distr.
+g.lsd <- sqrt(log(1 + (5^2) / (50^2))) 
+g.lmean <- log(50) - 0.5 * log(g.lsd)^2  
 l.lsd <- sqrt(log(1 + (278^2) / (1378^2)))
-l.lmean <- log(1378) - 0.5 * log(l.lsd)^2 # sd of the mean based on sd:s of LKJ
+l.lmean <- log(1378) - 0.5 * log(l.lsd)^2 
 k.lsd <- sqrt(log(1 + (0.28^2) / (0.43^2)))
 k.lmean <- log(0.43) - 0.5 * log(k.lsd)^2
 
@@ -129,7 +116,7 @@ consts = list(nobs = nrow(data.b),
               njobs = nrow(data.j),
               nK = nK,
               nsu = nsu,
-              npars = nsu, # n parameters in the LKJ dmnorm * number of spatial units 
+              npars = nsu,
               g.year = data.b$g.year,
               gj.year = data.j$g.year,
               smo.age = data.b$smo.age,
@@ -194,8 +181,6 @@ slaa.confmcmc <- configureHMC(slaa.c,
                               enableWAIC = TRUE,
                               useConjugacy = FALSE
 )
-# node.sub <- stnodes[str_detect(stnodes, "sig.l\\[") | str_detect(stnodes, "l.sigj")]
-# addHMC(slaa.confmcmc, node.sub, replace = TRUE)
 
 slaa.mcmc <- buildMCMC(slaa.confmcmc, project = slaa.model)
 

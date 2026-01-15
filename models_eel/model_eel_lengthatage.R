@@ -14,7 +14,6 @@ elaa.code <- nimbleCode({
     P[i] <- par[mb[i],2]
     L2[i] <- exp(par[mb[i],3]) + bsL*sex[i] + btL*temp.sc[i]
     K[i] <- exp(par[mb[i],4]) + bsK*sex[i] + btK*temp.sc[i] + hK[hab[i]]
-    #K[i] <- exp(par[mb[i],4]) + bsK*sex[i] + btK*temp.sc[i] #+ hK[hab[i], er[i]]
     
     # impute sex when missing in observations
     sex[i]~dbern(ps[1])
@@ -36,7 +35,7 @@ elaa.code <- nimbleCode({
     par[i, 1:npar] ~ dmnorm(mu.par[er[i],1:npar], cholesky = U[1:npar, 1:npar], prec_param = 0)
   }
   
-  # global pars (sd is uncertainty of the pars, assuming CV of 0.5)
+  # global pars 
   for(k in 1:ner){
     mu.par[k,1] ~ dnorm(mean = l1.lmean, sd = sqrt(log(1 + (0.5)^2)))
     mu.par[k,2] ~ dnorm(mean = p.mean, sd = 0.5)
@@ -50,7 +49,7 @@ elaa.code <- nimbleCode({
   sig.par[3] ~ dexp(1/l2.lsd)
   sig.par[4] ~ dexp(1/k.lsd)
   
-  l1.lsd <- sqrt(log(1 + (0.5)^2)) # CV = 0.5
+  l1.lsd <- sqrt(log(1 + (0.5)^2)) 
   l1.lmean <- log(100) - 0.5 * l1.lsd^2
   p.mean <- 0
   l2.lsd <- sqrt(log(1 + (200/850)^2)) # sd of the Linf in fishbase = 113
@@ -62,12 +61,6 @@ elaa.code <- nimbleCode({
   bsL ~ dnorm(0, sd = 1)
   bsK ~ dnorm(0, sd = 1)
   
-  # habitat effect on K (par 4) regional effects or global
-  # for(j in 1:nhab){
-  #   for(k in 1:ner){
-  #     hK[j,k] ~ dnorm(0, sd = 0.1)
-  #   }   
-  # }
   for(j in 1:nhab){
     hK[j] ~ dnorm(0, sd = 0.1)
   }
@@ -116,7 +109,6 @@ inits <- function(){
        btK = rnorm(1,0,0.1),
        btL = rnorm(1,0,0.1),
        hK = rnorm(const$nhab,0,0.01),
-       #hK = matrix(rep(rnorm(const$ner,0,0.01),4),nrow = const$nhab),
        ps = rnorm(2,0.5,.1),
        sig.par = c(rlnorm(1,0.1,0.01),
                    rlnorm(1,-1,0.01),
