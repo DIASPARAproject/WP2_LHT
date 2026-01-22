@@ -10,7 +10,7 @@ for(i in 1:nobs){
 }
 
 for(j in 1:nsu) {
-  for(k in 1:nK) {
+  for(k in 1:nsmo) {
     for(l in 1:ncoh) {
       for(m in 1:2) {
         
@@ -36,7 +36,7 @@ for(ii in 1:njobs){
 # spatially varying priors
 for(i in 1:nsu){
   lb.mu[i] ~ dunif(12, 20) # ~15 to 20 mm, DOI: 10.1111/j.1095-8649.2009.02497.x
-  g[i] ~ dnorm(g.lmean, sd = 1) # rw first year
+  g[i] ~ dnorm(g.lmean, sd = 1) 
   linf[i,1] ~ dnorm(l.lmean, sd = l.lsd) # males
   linf[i,2] ~ dnorm(l.lmean, sd = l.lsd) # females
   k.par[i] ~ dnorm(mean = k.lmean, sd = 0.5)
@@ -51,8 +51,8 @@ for(j in 1:nsu){
 
 # transition of vB pars from year i to i+1 (1 for each sex)
 for(i in 1:(nyear-1)){
-  k.year[1:npars,1,(i+1)] ~ dmnorm(k.year[1:npars,1,i], prec = tau_p[1:nsu,1:nsu])
-  k.year[1:npars,2,(i+1)] ~ dmnorm(k.year[1:npars,2,i], prec = tau_p[1:nsu,1:nsu])
+  k.year[1:nsu,1,(i+1)] ~ dmnorm(k.year[1:nsu,1,i], prec = tau_p[1:nsu,1:nsu])
+  k.year[1:nsu,2,(i+1)] ~ dmnorm(k.year[1:nsu,2,i], prec = tau_p[1:nsu,1:nsu])
 }
 
 tau_p[1:nsu, 1:nsu] <- inverse(sigma_p[1:nsu, 1:nsu])
@@ -99,24 +99,21 @@ l.lsd <- sqrt(log(1 + (278^2) / (1378^2)))
 l.lmean <- log(1378) - 0.5 * log(l.lsd)^2 
 k.lsd <- sqrt(log(1 + (0.28^2) / (0.43^2)))
 k.lmean <- log(0.43) - 0.5 * log(k.lsd)^2
-
 sig.l ~ dexp(1/150)
 sig.lj ~ dexp(1/20)
 
 })
 
-nK <- max(data.b$smo.age %>% na.omit())
+nsmo <- max(data.b$smo.age %>% na.omit())
 nsu <- length(unique(data.b$su))
 ncoh <- length(unique(data.b$hatch.year.f))
 coh.maxgage <- data.b %>% summarise(max.age = max(g.year), .by = hatch.year.f) %>% arrange(hatch.year.f) %>% pull(max.age)
 nyear <- ncoh + coh.maxgage[ncoh]
-npars <- nsu
 
 consts = list(nobs = nrow(data.b),
               njobs = nrow(data.j),
-              nK = nK,
+              nsmo = nsmo,
               nsu = nsu,
-              npars = nsu,
               g.year = data.b$g.year,
               gj.year = data.j$g.year,
               smo.age = data.b$smo.age,

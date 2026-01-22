@@ -1,0 +1,190 @@
+---
+title: "Salmon fecundity model summary"
+author: "Viktor Thunell" 
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: full
+    embed-resources: true
+    toc: true
+knitr: 
+  opts_chunk:
+    fig.align: center
+    out-width: 80%
+editor: source
+execute: 
+  echo: true
+  eval: true
+  cache: true
+---
+
+## Load libraries
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+
+# Load libraries, install if needed
+pkgs <- c("tidyverse", "tidylog", "devtools","viridis","nls.multstart", "broom", "patchwork", "coda", "boot", "tidybayes","bayesplot", "nimble", "here", "purrr")
+
+# remotes::install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
+
+if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
+    install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
+  }
+
+invisible(lapply(pkgs, library, character.only = T))
+
+options(ggplot2.continuous.colour = "viridis")
+theme_set(theme_minimal())
+
+# Set path
+color_scheme_set("viridis")
+home <- here::here()
+```
+
+## Fecundity 
+
+### Read and define data
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+
+salfec <- readRDS(file = "~/gitProjects/diasp-lht/data/data-for-2-2/salmon-fec_2025-12-21.RData")
+
+data.fec <- salfec %>%
+  drop_na(spat.unit) %>%
+  mutate(n.eggs = if_else(is.na(n.eggs.tot), n.eggs.str, n.eggs.tot),
+         su = as.integer(factor(spat.unit)),
+         length.lc = log(length_mm) - log(mean(length_mm)))
+
+```
+
+### Plot fecundity data
+```{r}
+data.fec %>%
+  ggplot() +
+  geom_point(aes(x = length_mm, y = n.eggs.str), color = "deeppink", alpha = 0.2) +
+  geom_point(aes(x = length_mm, y = n.eggs.tot), alpha = 0.3, shape = 4) +
+  facet_wrap(~spat.unit) +
+  theme_minimal() +
+  labs(title = "Total (grey) and stripped (pink) number of eggs")
+
+data.fec %>%
+  ggplot() +
+  geom_density(aes(x = n.eggs.str), fill = "deeppink", alpha = 0.5) +
+  geom_density(aes(x = n.eggs.tot), fill = "grey", alpha = 0.5) +
+  facet_wrap(~spat.unit) +
+  theme_minimal() +
+  labs(title = "Total (grey) and stripped (pink) number of eggs")
+
+data.fec %>%
+  mutate(n.eggs = if_else(is.na(n.eggs.tot), n.eggs.str, n.eggs.tot)) %>%
+  ggplot() +
+  geom_point(aes(x = log(length_mm)-log(mean(length_mm)), y = log(n.eggs)), alpha = 0.5) +
+  facet_wrap(~spat.unit) +
+  theme_minimal()
+
+data.fec %>%
+  ggplot() +
+  geom_density(aes(x = length_mm), fill = "deeppink", alpha = 0.5) +
+  facet_wrap(~spat.unit) +
+  xlim(200,NA) +
+  theme_minimal()
+```
+
+### Source models / Load samples
+```{r}
+fec.samples <- readRDS(paste0(home,"/models_salmon/samples/fec_samples_2026-01-15.RData"))$samples
+
+# # Or source model code and mcmc (load libs and data)
+# source(file = paste0(home,"/models_salmon/model_salmon_fecundity.R"))
+# t <- Sys.time()
+# Sys.time() - t # approx 12 hours with 12 000 NUTS mcmc samples
+
+```
+
+### Traces and ‘potential scale reduction factor’
+
+```{r}
+node.sub <- grep("^(a|b|r)", colnames(fec.samples[[1]]), value = TRUE)
+fec.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+fec.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+```
+
+### Predicted / observed
+
+```{r}
+dff <- fec.samples %>%
+  spread_draws(mu[i]) %>%
+  median_qi() %>%
+  rename(pred.ne = mu,
+         ind.id = i) %>%
+  ungroup() %>%
+  left_join(data.fec %>% 
+              select(length_mm,n.eggs,spat.unit) %>% 
+              rename(obs.neggs = n.eggs) %>%
+              mutate(ind.id = row_number()))
+
+dff %>%
+  ggplot() +
+  geom_abline(slope = 1) +
+  geom_point(aes(x = obs.neggs, y = pred.ne),shape = 4,alpha = 0.5) +
+  theme_minimal() +
+  facet_wrap(~spat.unit)
+ggsave(paste0(home, "/report/fec_po.png"), width = 17, height = 14, units = "cm")
+```
+
+### Fecundity variables
+
+```{r}
+fec.samples %>%
+  gather_draws(mu.a,mu.b,sd.a,sd.b,r) %>%
+  ggplot() +
+  geom_density(aes(x = .value, color = .variable)) +
+  facet_wrap(~.variable, scales = "free", ncol = 3) +
+  theme_minimal() 
+
+medianf <- fec.samples %>%
+  gather_draws(a[su], b[su]) %>%
+  ungroup() %>%
+  summarise(medf = median(.value), .by = .variable)
+
+fec.samples %>%
+  gather_draws(b[su], a[su]) %>%
+  ungroup() %>%
+  left_join(data.fec %>% distinct(su,spat.unit)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = .value, y = spat.unit),
+               outliers = FALSE, show.legend = FALSE) +
+  facet_wrap(~.variable, scales = "free_x") +
+  theme_minimal() +
+  geom_vline(data = medianf, aes(xintercept = medf), color = "darkgrey", size = 0.5) +
+  theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) 
+ggsave(paste0(home, "/report/fec_ab.png"), width = 17, height = 14, units = "cm")
+
+fec.samples %>%
+  spread_draws(b[su], a[su]) %>%
+  median_qi() %>%
+  tidyr::expand_grid(length.lc = seq(min(data.fec$length.lc), max(data.fec$length.lc), length.out = 1000)) %>%
+  left_join(data.fec %>% distinct(su,spat.unit)) %>%
+  ggplot() +
+  #geom_line(aes(x = length.lc, y = exp(a + length.lc*b), color = factor(spat.unit))) 
+  geom_line(aes(x = length.lc, y = a + length.lc*b, color = spat.unit)) +
+  #geom_line(aes(x = length.lc, y = exp(a + length.lc*b), color = factor(spat.unit))) +
+  #             outliers = FALSE, show.legend = FALSE) +
+  #facet_wrap(~spat.unit, scales = "free_y") 
+  theme_minimal() +
+  labs(y = "log(fecundity)")
+ggsave(paste0(home, "/report/fec_fal.png"), width = 17, height = 14, units = "cm")
+
+  
+```
+

@@ -5,11 +5,11 @@ esilv.code <- nimbleCode({
   
   # Likelihood
   for(i in 1:nobs){
-    length[i] ~ dlnorm(meanlog = s.mu[i], sdlog = s.sig)
+    length[i] ~ dlnorm(meanlog = s.mu[i], sdlog = s.sigma)
     s.mu[i] <- alpha[er[i],year[i]] + bs[er[i]]*sex[i] + bt*temp.sc[i]
   }
   
-  s.sig ~ dexp(7)
+  s.sigma ~ dexp(7)
   
   # first year
   for(l in 1:ner){
@@ -30,7 +30,7 @@ esilv.code <- nimbleCode({
   
   tau_p[1:ner, 1:ner]<- inverse(sigma_p[1:ner, 1:ner])
   
-  #Prior for correlation matrix (LKJ prior)
+  #Prior for correlation matrix Rnew (LKJ prior) on the cholesky of the Rnew, R. 
   phi[1]  <- eta + (ner - 2)/2
   corY[1] ~ dbeta(phi[1], phi[1])
   r12   <- 2 * corY[1] - 1
@@ -50,10 +50,10 @@ esilv.code <- nimbleCode({
       corZ[m, jj] ~ dnorm(0, 1)
     }
     scZ[m, 1:m] <- corZ[m, 1:m] / sqrt(inprod(corZ[m, 1:m], corZ[m, 1:m]))
-    R[1:m,(m+1)] <- sqrt(corY[m]) * scZ[m,1:m]
+    R[1:m,(m+1)] <- sqrt(corY[m]) * scZ[m,1:m] 
     R[(m+1),(m+1)] <- sqrt(1 - corY[m])
     for(jk in (m+1):ner){
-      R[jk,m] <- 0
+      R[jk,m] <- 0 
     }
   }  #m
   
@@ -77,7 +77,7 @@ esilv.code <- nimbleCode({
 
 # initial values generating function for all nodes
 inits <- function() {
-  list(s.sig = rexp(1,5),
+  list(s.sigma = rexp(1,5),
        alpha = matrix(rnorm(const$ner * const$nyear, log(658), 0.05),
                       nrow = const$ner, ncol = const$nyear),
        bs = rnorm(const$ner, log(393/658), 0.05),
@@ -112,7 +112,7 @@ eelsilv.model <- nimbleModel(eelsilv.code,
 # compile model
 silv.c <- compileNimble(silv.model)
 
-monits = c("l.sig","mu.a.gl","sd.a.gl","alpha","bs","bt","s.mu","R")
+monits = c("s.sigma","mu.a.gl","sd.a.gl","alpha","bs","bt","s.mu","R")
 
 # configure and build mcmc and add hmc to alpha and sigma nodes
 silv.confmcmc <- configureHMC(silv.c, monitors = monits, enableWAIC = TRUE)

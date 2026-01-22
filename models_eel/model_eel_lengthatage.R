@@ -37,10 +37,10 @@ elaa.code <- nimbleCode({
   
   # global pars 
   for(k in 1:ner){
-    mu.par[k,1] ~ dnorm(mean = l1.lmean, sd = sqrt(log(1 + (0.5)^2)))
+    mu.par[k,1] ~ dnorm(mean = l1.lmean, sd = l1.lsd)
     mu.par[k,2] ~ dnorm(mean = p.mean, sd = 0.5)
     mu.par[k,3] ~ dnorm(mean = l2.lmean, sd = sqrt(log(1 + (0.5)^2)))
-    mu.par[k,4] ~ dnorm(mean = k.lmean, sd = sqrt(log(1 + (0.5)^2)))
+    mu.par[k,4] ~ dnorm(mean = k.lmean, sd = k.lsd)
   }
   
   # basin variation of pars
@@ -61,6 +61,7 @@ elaa.code <- nimbleCode({
   bsL ~ dnorm(0, sd = 1)
   bsK ~ dnorm(0, sd = 1)
   
+  # habitat
   for(j in 1:nhab){
     hK[j] ~ dnorm(0, sd = 0.1)
   }
@@ -94,7 +95,7 @@ const <- list(A1 = min(data.schnu$age),
               nhab = length(unique(data.schnu$hab)),
               mb = data.schnu$main_bas,
               er = data.schnu$er
-)
+              )
 
 # initial values generating function
 inits <- function(){

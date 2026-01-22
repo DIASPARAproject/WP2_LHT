@@ -21,12 +21,11 @@ sfecu.code <- nimbleCode({
   }
   
   mu.a ~ dnorm(0, 1)
-  sd.a ~ dlnorm(log(0.2), 0.5)
+  sd.a ~ dexp(0.5)
   mu.b ~ dnorm(1, 1)
-  sd.b ~ dlnorm(log(0.5), 0.5)
+  sd.b ~ dexp(0.5)
   
 })
-
 
 nsu <- length(unique(data.fec$su))
 
@@ -34,10 +33,10 @@ nsu <- length(unique(data.fec$su))
 inits <- function(){
   list(a = rnorm(nsu,0,1),
        mu.a = rnorm(,0,1),
-       sd.a = rlnorm(1,log(0.2),0.1),
+       sd.a = rexp(1,0.5),
        b = rnorm(nsu,1,1),
        mu.b = rnorm(1,1,1),
-       sd.b = rlnorm(1,log(0.5),0.1),
+       sd.b = rexp(1,0.5),
        r = rgamma(1,1,1))
 }
 
@@ -82,4 +81,4 @@ sfecu.hmcc <- compileNimble(sfecu.hmc)
 sfecu.samples <- runMCMC(sfecu.hmcc, niter = 5000, nburnin = 3000, nchains = 3, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
 
 # Save samples
-saveRDS(sfecu.samples, file = paste0(home,"/data/sfecu.samples_",Sys.Date(),".RData"))
+saveRDS(sfecu.samples, file = paste0(home,"/models_salmon/samples/sfecu.samples_",Sys.Date(),".RData"))
