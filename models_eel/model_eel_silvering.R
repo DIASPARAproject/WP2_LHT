@@ -124,4 +124,4 @@ silv.mcmcc <- compileNimble(silv.mcmc, project = silv.model)
 
 silv.samples <- runMCMC(silv.mcmcc, niter = 6000, nburnin = 3000, nchains = 2, thin = 2, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
 
-saveRDS(silv.samples, file = paste0(home,"/data/silv.samples_",Sys.Date(),".RData"))
+saveRDS(silv.samples, file = paste0(home,"/models_eel/samples/silv.samples_",Sys.Date(),".RData"))
