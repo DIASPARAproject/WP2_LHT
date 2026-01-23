@@ -49,20 +49,6 @@ sfecu.model <- nimbleModel(sfecu.code,
                            data = data.sfecu %>% select(n.eggs, length.lc),
                            buildDerivs = TRUE)
 
-sfecu.model$simulate()
-sfecu.model$calculate()
-
-dataNodes <- sfecu.model$getNodeNames(dataOnly = TRUE)
-parentNodes <- sfecu.model$getParents(dataNodes, stochOnly = TRUE) #all of these should be added to monitor below to recreate other model variabsLes...
-stnodes <- sfecu.model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
-allvars <- sfecu.model$getVarNames(nodes = stnodes)
-mvars <- allvars[!(grepl("lifted",allvars))]  
-
-# calculate vars to id NAs
-for(i in 1:length(mvars)){
-  print(paste0(mvars[i]," ",sfecu.model$calculate(mvars[i]) ))
-}
-
 # configure hmc
 sfecu.confhmc <- configureHMC(sfecu.model,
                             monitors = c("a","b","mu.a","mu.b","sd.a","sd.b","p","r","mu"),

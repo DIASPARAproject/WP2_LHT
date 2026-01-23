@@ -149,24 +149,6 @@ slaa.model <- nimbleModel(slaa.code,
                                    data.j %>% select(length_mm_j)),
                           buildDerivs = TRUE)
 
-slaa.model$simulate()
-slaa.model$calculate()
-
-# identify nodes to sample 
-dataNodes <- slaa.model$getNodeNames(dataOnly = TRUE)
-deterNodes <- slaa.model$getNodeNames(determOnly = TRUE)
-parentNodes <- slaa.model$getParents(dataNodes, stochOnly = TRUE) #all of these should be added to monitor below to recreate other model variables...
-stnodes <- slaa.model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
-allvars <- slaa.model$getVarNames(nodes = stnodes)
-mvars <- allvars[!(grepl("lifted",allvars))]  
-
-slaa.model$calculate(mvars[1])
-# calculate vars
-vs <- mvars
-for(i in 1:length(vs)){
-  print(paste0(vs[i]," ",slaa.model$calculate(vs[i])[1] ))
-}
-
 # compile model
 slaa.c <- compileNimble(slaa.model)
 

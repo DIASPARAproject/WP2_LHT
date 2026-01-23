@@ -1,5 +1,6 @@
 ---
 title: "Yellow eel length at age model summary"
+subtitle: "DIASPARA WP 2.2"
 author: "Viktor Thunell" 
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 format: 
