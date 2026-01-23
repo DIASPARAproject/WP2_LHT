@@ -1,0 +1,378 @@
+---
+title: "Yellow eel length at age model summary"
+author: "Viktor Thunell" 
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: full
+    embed-resources: true
+    toc: true
+knitr: 
+  opts_chunk:
+    fig.align: center
+    out-width: 80%
+editor: source
+execute: 
+  echo: true
+  eval: true
+  cache: true
+---
+
+## Load libraries
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+
+# Load libraries, install if needed
+pkgs <- c("tidyverse", "tidylog", "devtools","viridis","sf","patchwork","coda","boot","tidybayes","bayesplot", "nimble", "here","reshape2")
+
+if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
+    install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
+  }
+
+invisible(lapply(pkgs, library, character.only = T))
+
+options(ggplot2.continuous.colour = "viridis")
+theme_set(theme_minimal()) 
+
+# Set path
+home <- here::here()
+```
+
+## Read data
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+
+## Read data
+df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_3.RData") %>%
+  st_drop_geometry()
+
+```
+
+## Length at age - Schnute growth model
+
+### Define data
+
+```{r}
+data.schnu <- df.eel %>%
+  filter(fi_lfs_code == "Y") %>%
+  rename(age = ageyear, 
+         length = lengthmm) %>%
+  drop_na(length, main_bas, age, ser_hty_code,ecoreg) %>%
+  mutate(sex = as.integer(if_else(sex == "f", 0, 1)),
+         emu = as.integer(factor(ser_emu_nameshort)),
+         main_bas = as.integer(factor(main_bas)),
+         er = as.integer(factor(ecoreg)),
+         hab = as.integer(factor(ser_hty_code)),
+         temp.sc = (tmp_dc_uyr - mean(tmp_dc_uyr))/sd(tmp_dc_uyr)) 
+```
+
+### Plot length at age data
+```{r}
+# density of length by sex
+data.schnu %>%
+  mutate(sex = if_else(sex == 0, "f", "m")) %>%
+  ggplot() +
+  geom_density(aes(x = age, fill = sex), alpha = 0.3) +
+  theme_minimal() +
+  
+data.schnu %>% 
+  mutate(sex = if_else(sex == 0, "f", "m")) %>%
+  ggplot() +
+  geom_density(aes(x = length, fill = sex), alpha = 0.3) +
+  theme_minimal()
+
+# length at age by sex
+data.schnu %>%
+  mutate(sex = if_else(sex == 0, "f", "m")) %>%
+  ggplot() +
+  geom_point(aes(age, length, color = factor(sex)), size = 0.1, alpha = 0.8) +
+  facet_wrap(~ecoreg) +
+  theme_minimal()
+
+# yellow growth by habitat and region, lots of combinations missing 
+data.schnu %>%
+  mutate(sex = if_else(sex == 0, "f", "m")) %>%
+  ggplot() +
+  geom_histogram(aes(length), size = 0.1, alpha = 0.8) +
+  facet_grid(ser_hty_code ~ ecoreg, scales = "free_y") +
+  scale_x_continuous(breaks = seq(0, 1000, 500)) +
+  theme_minimal() 
+
+# individuals (obs) per basin
+data.schnu %>%
+  summarise(nobs.bas = n(), .by = c(main_bas, ecoreg)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = ecoreg, y = nobs.bas), show.legend = FALSE) +
+  geom_point(aes(ecoreg, nobs.bas), alpha = 0.5, show.legend = FALSE) +
+  theme_minimal() +
+  labs(caption = "observations per basin by region") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75)))
+
+# possible temperature effects on length at age??
+data.schnu %>%
+  ggplot(aes(tmp_dc_uyr/10, length)) +
+  geom_point(show.legend = FALSE, alpha = 0.5) +
+  geom_smooth(method = "lm", se = TRUE) +
+  facet_wrap(~factor(round(age))) +
+  theme_minimal() +
+  labs(x = "Temp. [C]")
+
+```
+
+### Source Schnute model / Load samples
+
+```{r}
+# Load samples 
+schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-01-23.RData"))$samples
+
+# # Or source model code and mcmc (load libs and data)
+# t <- Sys.time()
+# source(file = paste0(home,"/models_eel/model_eel_lengthatage.R"))
+# Sys.time() - t # approx 15 hours with 10000 hmc smaples
+```
+
+### Traces and ‘potential scale reduction factor’
+
+The variables in the Schnute model are:
+"ps","l.sig","Ustar","U","hK","mu.par","sig.par","btL","btK","sex","bsL","bsK","par","l.mu"), 
+
+```{r}
+## par ( a sample of the par traces)
+node.sub <- grep("^par\\[", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[sample(1:length(node.sub), 36)], drop = FALSE] %>%
+mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+# which psrf are > 1.01 
+pl$psrf[which(pl$psrf[, 1] > 1.01),]
+# check traces of those psrf that are > 1.01
+schnu.samples[,node.sub[which(pl$psrf[, 1] > 1.01)]] %>%
+#schnu.samples[, node.sub[sample(1:length(node.sub), 16)], drop = FALSE] %>%
+mcmc_trace()
+# EES of par 
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+pl[which(pl < 1000)]
+
+## bpar ( a sample of the par traces)
+node.sub <- grep("^bpar\\[", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[sample(1:length(node.sub), 36)], drop = FALSE] %>%
+mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+# which psrf are > 1.01 
+pl$psrf[which(pl$psrf[, 1] > 1.1),] # bpar[8, 3] above 1.1
+# check traces of those psrf that are > 1.01
+schnu.samples[,node.sub[which(pl$psrf[, 1] > 1.1)]] %>%
+#schnu.samples[, node.sub[sample(1:length(node.sub), 16)], drop = FALSE] %>%
+mcmc_trace()
+# EES of par 
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+pl[which(pl < 1000)]
+
+## mu.par
+node.sub <- grep("^mu.par", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+# no mu.par psrf > 1.01
+pl$psrf[which(pl$psrf[, 1] > 1.01),]
+# all ess are good
+schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+
+## sig.par
+node.sub <- grep("^sig.par", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+
+# R - cholesky of correlation matrix
+node.sub <- grep("^R\\[", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[sample(1:length(node.sub), 48)], drop = FALSE] %>%
+mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+pl[which(pl < 1000 & pl > 0)]
+
+# l.sig bsL bsK btK btL
+node.sub <- grep("^(l.sig|bsL|bsK|btK|btL)", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+
+# ps
+node.sub <- grep("^ps", colnames(schnu.samples[[1]]), value = TRUE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag(multivariate = FALSE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+effectiveSize()
+
+node.sub <- grep("^hK", colnames(schnu.samples$chain1), value = TRUE)
+schnu.samples[, node.sub[], drop = FALSE] %>%
+mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag()
+pl$psrf[which(pl$psrf[, 1] > 1.01),]
+
+```
+
+### Schnute pars and covariates
+
+#### Schnute pars
+```{r, cache = FALSE}
+dfp <- schnu.samples %>%
+  gather_draws(bpar[main_bas,pars], sep = ",") %>%
+  mutate(par = case_when(pars == 1 ~ "L1",
+                         pars == 2 ~ "P",
+                         pars == 3 ~ "L2",
+                         pars == 4 ~ "K"),
+         val = case_when(!pars == 2 ~ exp(.value),
+                         .default = .value)) %>%
+  left_join(data.schnu %>% distinct(ecoreg, main_bas))
+
+dfp %>%
+  filter(par == "L1") %>%
+  ggplot() +
+  geom_density(aes(x = val, group = main_bas), color = "grey") + 
+  geom_density(aes(x = val), color = "black", show.legend = FALSE) + 
+  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+  labs(title = "L1 by main basin in region", caption = "black line is region specific posterior")
+ggsave(paste0(home, "/report/elaa_L1.png"), width = 17, height = 14, units = "cm")
+
+dfp %>%
+  filter(par == "L2") %>%
+  ggplot() +
+  geom_density(aes(x = val, group = main_bas), color = "grey") + 
+  geom_density(aes(x = val), color = "black", show.legend = FALSE) + 
+  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+  labs(title = "L2 by main basin in region", caption = "black line is region specific posterior")
+ggsave(paste0(home, "/report/elaa_L2.png"), width = 17, height = 14, units = "cm")
+
+dfp %>%
+  filter(par == "K") %>%
+  ggplot() +
+  geom_density(aes(x = val, group = main_bas), color = "grey") + 
+  geom_density(aes(x = val), color = "black", show.legend = FALSE) + 
+  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+  labs(title = "K by main basin in region", caption = "black line is region specific posterior")
+ggsave(paste0(home, "/report/elaa_K.png"), width = 17, height = 14, units = "cm")
+
+dfp %>%
+  filter(par == "P") %>%
+  ggplot() +
+  geom_density(aes(x = val, group = main_bas), color = "grey") + 
+  geom_density(aes(x = val), color = "black", show.legend = FALSE) + 
+  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+  labs(title = "P by main basin in region", caption = "black line is region specific posterior")
+ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 14, units = "cm")
+
+```
+
+
+#### Covariates
+```{r, cache = FALSE}
+schnu.samples %>%
+  gather_draws(hK[hab], sep = ",") %>%
+  ungroup() %>%
+  left_join(data.schnu %>% distinct(hab,ser_hty_code)) %>%
+  #filter(!is.na(ecoreg)) %>%
+  ggplot() +
+  geom_density(aes(x = .value, color = factor(ser_hty_code))) +
+  #facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+  labs(title = "habitat")
+  
+schnu.samples %>%
+  gather_draws(btL,btK,bsL,bsK) %>%
+  ggplot() +
+  geom_density(aes(x = .value, color = .variable)) +
+  facet_wrap(~.variable, scales = "free")
+ggsave(paste0(home, "/report/elaa_bLK.png"), width = 17, height = 14, units = "cm")
+```
+
+### Predicted / observed
+```{r, cache = FALSE}
+
+dfp <- schnu.samples %>%
+  spread_draws(l.mu[i]) %>%
+  median_qi() %>%
+  rename(pred.l = l.mu,
+         ind.id = i) %>%
+  ungroup() %>%
+  left_join(data.schnu %>% 
+              select(length,ecoreg) %>% 
+              rename(obs.l = length) %>%
+              mutate(ind.id = row_number())) 
+
+dfp %>%
+  slice_sample(n = 5000) %>%
+  ggplot() +
+  geom_abline(slope =1, color = "darkgrey") +
+  geom_point(aes(x = obs.l, y = pred.l), shape = 4, alpha = 0.7) +
+  facet_wrap(~ecoreg) +
+  theme_minimal() 
+ggsave(paste0(home, "/report/elaa_po.png"), width = 17, height = 14, units = "cm")
+
+
+```
+
+### Predicted Schnute curves
+```{r, cache = FALSE}
+dfp <- schnu.samples[[1]] %>% # use one chain to reduce object size
+  spread_draws(l.mu[i], sex[i]) %>%
+  ungroup() %>%
+  left_join(data.schnu %>% select(main_bas, ser_hty_code, ecoreg, age, length) %>% mutate(id = row_number()), join_by(i == id))
+
+dfp.summb <- dfp %>%
+  summarise(medl = median(l.mu), .by = c(sex, age, ecoreg, main_bas, ser_hty_code))
+
+dfp %>%
+  filter(sex == 0) %>%
+  ungroup() %>%
+  ggplot() +
+  geom_boxplot(aes(x = age, y = l.mu, group = age), 
+               outlier.color = "lightgrey",
+               outlier.fill = "lightgrey",
+               outlier.size = 0.5
+               ) +
+  geom_line(data = dfp.summb %>% filter(sex == 0), 
+            aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
+  facet_wrap(ser_hty_code~ecoreg) +
+  theme_minimal() +
+  labs(title = "females")
+ggsave(paste0(home, "/report/elaa_fc.png"), width = 17, height = 14, units = "cm")
+
+dfp %>%
+  filter(sex == 1) %>%
+  ungroup() %>%
+  ggplot() +
+  geom_boxplot(aes(x = age, y = l.mu, group = age),
+               outlier.color = "lightgrey",
+               outlier.fill = "lightgrey",
+               outlier.size = 0.5
+               ) +
+  geom_line(data = dfp.summb %>% filter(sex == 1), 
+            aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
+  facet_wrap(ser_hty_code~ecoreg) +
+  theme_minimal() +
+  labs(title = "males")
+ggsave(paste0(home, "/report/elaa_mc.png"), width = 17, height = 14, units = "cm")
+``` 

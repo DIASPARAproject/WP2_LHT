@@ -1,4 +1,5 @@
-# Eel length at age model (based on schnute_v9)
+# DIASPARA WP2.2 LHT models - Viktor Thunell
+# Yellow eel length at age model and mcmc
 # Schnute growth equation
 
 # model code
@@ -109,18 +110,6 @@ elaa.code <- nimbleCode({
   
 })
 
-# Function creating the Cholesky of the covar. matrix
-uppertri_mult_diag <- nimbleFunction(
-  run = function(mat = double(2), vec = double(1)) {
-    returnType(double(2))
-    p <- length(vec)
-    out <- matrix(nrow = p, ncol = p, init = FALSE)
-    for(k in 1:p)
-      out[ , k] <- mat[ , k] * vec[k]
-    return(out)
-    # turn off buildDerivs for the i index
-  }, buildDerivs = list(run = list(ignore = c('k')))) 
-
 ner = length(unique(data.schnu$er))
 ermb = data.schnu %>% distinct(main_bas, er) %>% arrange(main_bas)
 
@@ -168,21 +157,6 @@ elaa.model <- nimbleModel(elaa.code,
                              data = data.schnu %>% select(age,length,sex),
                              buildDerivs = TRUE) 
 
-elaa.model$simulate()
-elaa.model$calculate()
-
-# identify nodes to sample 
-dataNodes <- elaa.model$getNodeNames(dataOnly = TRUE)
-parentNodes <- elaa.model$getParents(dataNodes, stochOnly = TRUE) #all of these should be added to monitor below to recreate other model variabsLes...
-stnodes <- elaa.model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
-allvars <- elaa.model$getVarNames(nodes = stnodes)
-mvars <- allvars[!(grepl("lifted",allvars))]  
-
-# calculate vars to id NAs
-for(i in 1:length(mvars)){
-  print(paste0(mvars[i]," ",elaa.model$calculate(mvars[i]) ))
-}
-
 # compile model
 elaa.c <- compileNimble(elaa.model)
 
@@ -198,6 +172,5 @@ elaa.mcmcc <- compileNimble(elaa.mcmc, project = elaa.model, resetFunctions = TR
 
 # HMC samples
 elaa.samples.hmc <- runMCMC(elaa.mcmcc, niter = 20000, nburnin = 12500, nchains = 2, thin=5, WAIC=TRUE, samplesAsCodaMCMC = TRUE) 
-# NOTE: There are 115 individual pWAIC values that are greater than 0.4.
 
 saveRDS(elaa.samples, file = paste0(home,"/models_eel/samples/elaa.samples_",Sys.Date(),".RData"))

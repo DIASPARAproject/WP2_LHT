@@ -1,5 +1,5 @@
 ---
-title: "Salmon fecundity model summary"
+title: "Salmon length at age model summary"
 author: "Viktor Thunell" 
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 format: 

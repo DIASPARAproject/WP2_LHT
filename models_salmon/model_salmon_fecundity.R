@@ -1,4 +1,4 @@
-# DIASPARA WP2.2 LHT models
+# DIASPARA WP2.2 LHT models - Viktor Thunell
 # Salmon fecundity model and mcmc
 
 sfecu.code <- nimbleCode({

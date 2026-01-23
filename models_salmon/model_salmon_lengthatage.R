@@ -1,4 +1,4 @@
-# DIASPARA WP2.2 LHT models
+# DIASPARA WP2.2 LHT models - Viktor Thunell
 # Salmon length at age model and mcmc
 
 slaa.code <- nimbleCode({
