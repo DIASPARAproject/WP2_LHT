@@ -287,7 +287,6 @@ dfp %>%
   ggplot() +
   geom_boxplot(aes(y = length, x = year, group = year), color = "#00BFC4", outliers = FALSE) +
   geom_line(aes(y = m_length, x = year), color = "#00BFC4", alpha = 0.4) +
-  scale_x_discrete(breaks = function(x) x[as.numeric(x) %% 2 == 0]) +
   facet_wrap(~ecoreg, scales = "free_y") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
@@ -316,7 +315,6 @@ silv.samples %>%
 samp <- silv.samples[[1]]
 
 cols <- grep("^R",colnames(as.matrix(samp)))
-
 
 corr_arr <- array(NA, dim = c(9, 9, nrow(samp)))
 
@@ -357,41 +355,5 @@ as.data.frame(corr) %>%
   scale_x_discrete(labels = er.labs) +
   scale_y_discrete(labels = er.labs) +
   theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-
-# var.temps <- data.silv %>%
-#   mutate(m.temp = mean(temp.sc), .by = ecoreg) %>%
-#   distinct(er, ecoreg, m.temp) %>%
-#   arrange(-m.temp)
-# 
-# as.data.frame(corr) %>%
-#   mutate(r = row_number()) %>%
-#   pivot_longer(cols = -r, names_to = "c", values_to = "value") %>%
-#   mutate(c = as.integer(gsub("V", "", c)) ) %>%
-#   left_join(var.temps, by = c("r" = "er")) %>%
-#   left_join(var.temps, by = c("c" = "er"), suffix = c(".x", ".y")) %>%
-#   mutate(r = reorder(r, m.temp.x),
-#          c = reorder(c, -m.temp.y)) %>%
-#   ggplot(aes(x=c, y=r, fill = value)) + 
-#   geom_tile() +
-#   scale_fill_viridis_c() +
-#   scale_x_discrete(labels = er.labs) +
-#   scale_y_discrete(labels = er.labs) +
-#   theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-
-# one sample alternative
-# R_sample <- matrix(samp[nrow(samp), cols], 9, 9)
-# corr = crossprod(R_sample)  ## i.e., t(R_sample) %*% R_sample
-# melt(corr) %>%
-#   left_join(var.lats, by = c("Var1" = "er")) %>%
-#   left_join(var.lats, by = c("Var2" = "er"), suffix = c(".x", ".y")) %>%
-#   mutate(Var1 = reorder(Var1, m.lat.x),
-#          Var2 = reorder(Var2, -m.lat.y)) %>%
-#   ggplot(aes(x=Var2, y=Var1, fill = value)) + 
-#   geom_tile() +
-#   scale_fill_viridis_c() +
-#   scale_x_discrete(labels = er.labs) +
-#   scale_y_discrete(labels = er.labs) +
-#   theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-  
 
 ```

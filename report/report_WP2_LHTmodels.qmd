@@ -160,11 +160,11 @@ Region specific temperature information from the HydroSHEDS database [@lehner200
 
 We used a lognormal likelihood for $length_i$ of individual $i$ (i = 1,\dots,n_{obs}) to capture positive values and right‑skewed variability typical of growth data.
 
-$L_i \sim \text{LogNormal}(\mu_{L_i}, \sigma)$
+$L_i \sim \text{LogNormal}(\mu_{L_{[i]}}, \sigma)$
 
 where $\mu_{L_i}$ is the expected log-length for individual $i$ and $\sigma$ is the residual standard deviation on the log scale. In turn, log-length is predicted by:
 
-$\mu_{L_i} = \alpha_{j,year} + b_{s,j}sex_i + b_{t,j}T_{j}$,
+$\mu_{L_i} = \alpha_{j[i],year[i]} + b_{s,j}sex[i] + b_{t,j}T_{j[i]}$,
 
 where $\alpha_{j,year}$ represents the intercept for region $j = 1,\dots,n_{j}$ in year $y$, $b_{s,j}$ is a region specific effect of sex, $b_t$ is the effect temperature in region $j$.
 
@@ -179,7 +179,7 @@ where $\Sigma_\alpha$ is a covariance matrix describing correlation among region
 
 $$\Sigma_\alpha = D R_\alpha D,$$
 
-where $D$ is a diagonal matrix of region specific standard deviations $\sigma_{\alpha,l}$. 
+where $D$ is a diagonal matrix of region specific standard deviations $\sigma_{\alpha,l}$.
 
 Hyperpriors for region specific intercept and standard deviations were
 
@@ -187,7 +187,7 @@ $$\mu_{\alpha,j} \sim \text{Normal}(\mu_{sl},\, \sigma_{sl}),$$
 
 $$\sigma_{\alpha,j} \sim \text{Gamma}(1.5,\, 1.5/\sigma_{sl}).$$
 
-and we used a hierachhcial prior for a region specific covariate effect of sex,
+and we used a hierachical prior for a region specific covariate effect of sex,
 
 $$b_{s,j} \sim \text{Normal}(\mu_{bs}, \sigma_{bs})$$
 
@@ -236,7 +236,7 @@ Male median length at silvering over time by eco-region. Boxes delimit the inter
 
 ### Spatiotemporal variation in salmon length at age
 
-We built a spatiotemporal model of individual body length as a function of age using a biphasic growth model. A biphasic growth model, separating life stages,  is  suitable for diadromous species as growth is strongly habitat dependent [@nater2018]. The model predicts age dependent length increments of cohorts recursively using a linear function for the freshwater (juvenile) phase and the von Bertalanffy growth function for the sea phase.
+We built a spatiotemporal model of individual body length as a function of age using a biphasic growth model. A biphasic growth model, separating life stages,  is  suitable for salmon as growth is strongly habitat dependent [@nater2018]. The model predicts age dependent length increments of cohorts recursively using a linear function for the freshwater (juvenile) phase and the von Bertalanffy growth function for the sea phase.
 
 The model predicts estimates growth for each sex, cohort and smolt age across spatial units and over time.
 
@@ -250,15 +250,15 @@ To account for seasonal variation in growth, a growth year ($age_g$) is consider
 
 ##### Biphasic process model
 
-Expected increment in length at age was modeled recursively to capture changes in length $L_\mu$ across habitats and to predict growth rates for each year $y$. We estimated length increments for each spatial unit $j$, smolt age $a$, cohort $c$, sex $s$, and growth year $age_g$. For the freshwater, linear growth phase, expected length is predicted by 
+Expected increment in length at age was modeled recursively to capture changes in length $\mu_L$ across habitats and to predict growth rates for each year $y$. We estimated length increments for each spatial unit $j$, smolt age $a$, cohort $c$, sex $s$, and growth year $age_g$. For the freshwater, linear growth phase, expected length is predicted by 
 
 $$\mu_{L,j,a,c,s,age_g} = L_{b,j} + r_j$$
 where $L_{b,j}$ is the length at birth and $r_j$ is juvenile growth rate in $mm/y$.
 
-Growth in the sea phase is predicted by [-@fabens1965] version of the von Bertalanffy growth equation (with $\Delta t = 1$) which is suitable for modelling incremental data to predict expected length:
+Growth in the sea phase is predicted by the @fabens1965 version of the von Bertalanffy growth equation (with $\Delta t = 1$) which is suitable for modelling incremental data to predict expected length:
 
 $$\mu_{L,j,a,c,s,age_g} = \mu_{L,j,a,c,s,age_g-1} + (L_{\infty,j,s} - \mu_{L,j,a,c,s,age_g-1})(1 - \exp(-k_{j,s,y}))$$
-where $L_{\infty,j,s}$ is the spatial unit and sex-specific asymptotic length, $k_{j,s,y}$ is a year-specific von Bertalanffy growth coefficient where $y = c+age_g$. Smoltification at age $a$ delimits the two growth phases. 
+where $L_{\infty,j,s}$ is the spatial unit and sex-specific asymptotic length, $k_{j,s,y}$ is a year-specific von Bertalanffy growth coefficient where $y = c+age_g$. Smoltification at age $a$ delimits the two growth phases.
 
 ##### Observation models
 
@@ -266,9 +266,9 @@ We separated the observations by growth phase and used two observation models si
 
 For salmon caught in their sea phase, observations i, length (total length in mm) was assumed to follow a normal distribution:
 
-$L_{s,i} \sim \text{Normal}(\mu_{L_i,j[i],a[i],c[i],s[i],age_y[i]}, \sigma_{Ls})$
+$L_{s,i} \sim \text{Normal}(\mu_{L_i,j[i],a[i],c[i],s[i],age_g[i]}, \sigma_{Ls})$
 
-where $\mu_{L_i}$ is the expected length predicted by spatial unit (j), smolt age (a), cohort (c), sex (s), and growth year (age_y), and $\sigma_L$ is the residual observation error.
+where $\mu_{L_i}$ is the expected length predicted by spatial unit (j), smolt age (a), cohort (c), sex (s), and growth year (age_g), and $\sigma_Ls$ is the residual observation error.
 
 We used a normal likelihood also for the freshwater observations:
 
@@ -278,7 +278,7 @@ $\mu_{Lj} = L_{b,j[i]} + r_{j[i]}age_{g[i]}$
 
 where $\sigma_{Lf}$ is the juvenile observation error.
 
-##### Spatialtemporal process and priors (change HEADER NAME??)
+##### Spatialtemporal process and priors
 
 Parameters $L_{b,j}$, $r_j$ and $L_{\infty,j,s}$ were given estimates by spatial unit. The spatial unit specific estimates of the growth coefficient $k_{j,s,y}$ follows a multivariate random walk across years. The estimates in the first year were assigned a hierarchical prior to share information across regions:
 
@@ -303,9 +303,9 @@ We used informative priors based on literature values (Fishbase @fishbase2024 an
 | $L_{b,j}$ | Mean length at birth in $j$ | $\text{Uniform}(12, 20)$ | [@gilbey2010] | 
 | $r_j$ | Freshwater linear growth rate in $j$ | $\text{Normal}(\mu_r, 1)$ * |  $\mu_r = 1.26$ **| 
 | $L_{\infty,j,s}$ | Spatial unit and sex specific asymptotic length | $\text{Normal}(L_{\infty,\mu}, L_{\infty,sd})$ * | $L_{\infty,\mu} = 5.93$, $L_{\infty,sd} = 0.20$ **| 
-| $k_{j,s, y=1}$ | Initial spatial unit and sex specific mean growth coefficient | $\text{Normal}(k_{\mu}, 0.5)$ * | $k_{\mu} = -0.98$ **| | 
+| $k_{j,s, y=1}$ | Initial spatial unit- and sex specific mean growth coefficient | $\text{Normal}(k_{\mu}, 0.5)$ * | $k_{\mu} = -0.98$ **| | 
 | $\sigma_{k,j}$ | Spatial SD of growth coefficient variation | $\text{Lognormal}(\log(k_{\text{sd}}), 0.1)$ | $k_sd = 0.59$ |
-| $\Sigma_p$  | Spatial covariance matrix for $k_{j,s,y}$ | $D,R,D$ |
+| $\Sigma_p$  | Spatial covariance matrix for $k_{j,s,y}$ | $D,R_k,D$ |
 | $R_k$ | Spatial correlation matrix for $k_{j,s,y}$| $\text{LKJ}(\eta=2)$ | | 
 
 : Prior distributions for parameters in the salmon length at age model. (\**Values are estimated on log scale and \text{**} are lognormal transformations of estimates from Fishbase [@fishbase2024]*.
@@ -366,19 +366,19 @@ Predicted salmon length at age ($\mu_{L,j,a,c,s,age_g} = L_{b,j} + r_j$). Boxes 
 
 ### Spatial variation in salmon fecundity
 
-To describe spatial variation in fecundity, we developed a model of number of eggs per spawner given by length (fecundity at length). While e.g. age can be good predictors of fecundity [@deeyto2015], we used length as this was measured across all individuals in the data and this opens for modelling temporal change in fecundity from changes in length over time.
+To describe spatial variation in fecundity, we developed a model of number of eggs per spawner given by length (fecundity at length). While e.g. age can be good predictors of fecundity [@deeyto2015], we used length as this was measured across all individuals in the data.
 
 #### Data 
 
-We used count data collected within the DIASPARA salmon data request. The data included in the model comes from 9 spatial units: the Baltic sea Assessment units 1-3, the Swedish west coast, Brittany, lower Normandy, upper Normandy, Allier-Gironde and the Irish west and north coasts. The data is described in detail in DIASPARA WP2.1 Data Inventory. The data set used in the model contains 1799 individual observations.
+We used count data collected within the DIASPARA WP2 salmon data request (see DIASPARA WP2.1 Data Inventory). The data included in the model comes from 9 spatial units: the Baltic sea Assessment units 1-3, the Swedish west coast, Brittany, lower Normandy, upper Normandy, Allier-Gironde and the Irish west and north coasts. The data is described in detail in DIASPARA WP2.1 Data Inventory. The data set used in the model contains 1799 individual observations.
 
 The methodology for assessing number of eggs in salmon gonads vary between spatial units. Most importantly, the process of removing the eggs from the fish vary. In salmon hatchery breeding / rearing, the common method is to "strip" the salmon by hand by applying pressure to the abdomen of the spawning-ready females to expel the eggs. This leaves a varying amount of eggs left in the gonad resulting in uncertain counts. For scientific assessments, requiring more precise estimates of egg counts, stripping is either supplemented with removing the gonad (lethal method) and counting remaining eggs or all eggs are counted from the removed gonad (i.e. no stripping).
 
-Four spatial units contains observations from fish based on counting all eggs in the gonad and five are based on stripping only. The percentage of eggs left in the gonad after stripping in these fish varied between 0 and 51% with a mean of 6%. We have not assessed the effect of this variation in current model becuase...
+Four spatial units contains observations from fish based on counting all eggs in the gonad and five are based on stripping only. The percentage of eggs left in the gonad after stripping in these fish varied between 0 and 51% with a mean of 6%. We have not assessed the effect of this variation in current model.
 
 #### Model description
 
-We assessed spatial variation in individual fecundity ($n.eggs$, egg count per spawner female) using a hierarchical negative binomial regression model to account for overdispersion typical of fish fecundity data.
+We assessed spatial variation in individual fecundity ($n.eggs$, egg count per spawner female) using a hierarchical negative binomial regression model to account for overdispersion.
 
 $$n.eggs_i \sim \text{NegBin}(p_i, r)$$
 where $r$ is the dispersion parameter and $p_i = r/(r+\mu_i)$. Expected fecundity of individual $i$ ($\mu_i$) was modeled as a log–linear function of individual body length:
@@ -393,7 +393,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 ::: {#tbl-fecundity}
 | Parameter | Description | Prior distribution |
 |----------|-------------|-----------------|
-| $\text{n.eggs}_i$ | Number of eggs for  individual $i$ | $\text{NegBin}(p_i, r)$ |
+| $\text{n.eggs}_i$ | Number of eggs for individual $i$ | $\text{NegBin}(p_i, r)$ |
 | $r$ | Negative binomial dispersion parameter | $\text{Gamma}(1, 1)$ |
 | $a_j$ | Spatial unit specific intercept | $\text{Normal}(\mu_a, \sigma_a)$ |
 | $b_j$ | Spatial unit specific slope | $\text{Normal}(\mu_b, \sigma_b)$ |
