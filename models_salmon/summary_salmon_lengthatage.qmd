@@ -103,7 +103,7 @@ data.j <- data.biph %>%
 ### Plot length at age data
 ```{r}
 data.biph %>%
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  mutate(sex = ifelse(sex == 1, "f","m")) %>%
   ggplot(aes(tot.age, length_mm, color = factor(sex)), alpha = 0.3) +
   geom_point(size = 0.1) +
   facet_grid(age.type~sex) +
@@ -120,7 +120,7 @@ data.biph %>%
   geom_density(aes(x = length_mm, fill = sex), alpha = 0.3)
 
 data.biph %>% 
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  mutate(sex = ifelse(sex == 1, "f","m")) %>%
   ggplot() +
   geom_density(aes(x = length_mm, fill = factor(sex)), alpha = 0.5) +
   facet_wrap(~tot.age, scales = "free_y") +
@@ -128,10 +128,10 @@ data.biph %>%
 
 # age at smoltification by spatial unit
 data.biph %>%
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  mutate(sex = ifelse(sex == 1, "f","m")) %>%
   filter(age.type == "both") %>%
   ggplot() +
-  geom_density(aes(x = juv.age, fill = factor(sex)),  alpha = 0.3) +
+  geom_density(aes(x = juv.age),  alpha = 0.3) +
   facet_wrap(~spat.unit) +
   labs(x = "age at smoltification") +
   xlim(-1, 5)
@@ -146,7 +146,7 @@ data.biph %>%
   
 data.biph %>%
   filter(age.type == "both") %>%
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  mutate(sex = ifelse(sex == 1, "f","m")) %>%
   ggplot(aes(tot.age, length_mm, color = factor(sex))) +
   geom_point(alpha = 0.3) +
   facet_wrap(~spat.unit) +
@@ -202,7 +202,6 @@ laa.samples[, node.sub[], drop = FALSE] %>% gelman.diag()
 print("effective sample size")
 laa.samples[, node.sub[], drop = FALSE] %>% effectiveSize()
 
-#node.sub <- grep("^Ustar\\[", colnames(laa.samples[[1]]), value = TRUE) 
 node.sub <- grep("^R\\[", colnames(laa.samples[[1]]), value = TRUE) 
 laa.samples[, node.sub[sample(1:length(node.sub), 36)], drop = FALSE] %>% mcmc_trace()
 pl <- laa.samples[, node.sub[], drop = FALSE] %>% gelman.diag(multivariate = FALSE)
@@ -262,9 +261,10 @@ dfl %>%
   labs(caption = "Sea length at age" )
 ggsave(paste0(home, "/report/salaa_poa.png"), width = 17, height = 14, units = "cm")
 
+rm(dfj,dfl)
 ```
 
-### length at age variables
+### Length at age variables
 
 ```{r}
 laa.samples %>%
@@ -317,25 +317,106 @@ laa.samples %>%
   gather_draws(k.year[su,sex,year], sep = ",") %>%
   ungroup() %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  left_join(var.lats) %>%
+  mutate(sex = ifelse(sex == 1, "f","m"),
+         r = reorder(su, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = exp(.value), y = spat.unit, color = sex),
+  geom_boxplot(aes(x = exp(.value), y = r, color = sex),
                outliers = FALSE) +
   theme_minimal() +
   coord_cartesian(xlim = c(-0.5,4)) +
+  scale_y_discrete(labels = su.labs) +
   labs(y = "", x = "k")
 
 laa.samples %>%
   gather_draws(linf[su,sex], sep = ",") %>%
   ungroup() %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
-  mutate(sex = ifelse(sex == 1, "m","f")) %>%
+  left_join(var.lats) %>%
+  mutate(sex = ifelse(sex == 1, "f","m"),
+         r = reorder(su, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = exp(.value), y = spat.unit, color = sex),
+  geom_boxplot(aes(x = exp(.value), y = r, color = sex),
                outliers = FALSE) +
+  scale_y_discrete(labels = su.labs) +
   theme_minimal() +
   labs(y = "", x = expression(L[infinity]))
 ggsave(paste0(home, "/report/salaa_linf.png"), width = 17, height = 14, units = "cm")
+
+```
+
+### Predicted length at age curves
+```{r}
+gc()
+# based on l.mu (age.type = "both") 
+dfp <- laa.samples[[1]][sample(1:1500,1000), ] %>% # sample from one chain to reduce object size
+  spread_draws(l.mu[su,smo.age,coh,sex,gy], sep = ",") %>%
+  ungroup() 
+
+masu <- data.biph %>%
+  summarise(ma = max(g.year), .by = su) %>%
+  arrange(su)
+smcsu <- data.biph %>%
+  distinct(su, hatch.year.f, smo.age, sex) %>%
+  rename(coh = hatch.year.f) 
+
+dfp %>%
+  filter(gy <= masu[su,2])  %>%
+  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
+  filter(#sex == 1, #females
+         #coh %in% c(2,8,16)
+         ) %>%
+  ungroup() %>%
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = factor(gy), y = l.mu, color = factor(sex)), 
+               outliers = FALSE) +
+  facet_wrap(~spat.unit, scales = "free") +
+  theme_minimal() +
+  labs(title = "females")
+ggsave(paste0(home, "/report/salaa_cur.png"), width = 17, height = 14, units = "cm")
+
+dfp %>%
+  filter(gy <= masu[su,2]) %>%
+  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
+  filter(sex == 1,
+         smo.age == c(1:3)) %>% #females
+  summarise(ml = median(l.mu), .by = c(su, coh, gy, smo.age)) %>%
+  rename(hatch.year.f = coh) %>%
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  left_join(data.biph %>% distinct(hatch.year.f, hatch.year)) %>%
+  filter(!ml == 0) %>%
+  ggplot() +
+  geom_line(aes(x = gy, y = ml, group = interaction(hatch.year, smo.age)), color = "grey") +
+  geom_point(data = data.biph %>% 
+               filter(sex == 1,
+                      #hatch.year.f %in% c(1,5,10,15,20,25)
+                      ),
+             aes(x = g.year, y = length_mm), size = 0.3, alpha = 0.1 ) +
+  facet_wrap(~spat.unit) +
+  theme_minimal() +
+  labs(title = "females")
+  
+dfp %>%
+  filter(gy <= masu[su,2]) %>%
+  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
+  filter(sex == 2,
+         smo.age == c(1:3)) %>% #females
+  summarise(ml = median(l.mu), .by = c(su, coh, gy, smo.age)) %>%
+  rename(hatch.year.f = coh) %>%
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  left_join(data.biph %>% distinct(hatch.year.f, hatch.year)) %>%
+  filter(!ml == 0) %>%
+  ggplot() +
+  geom_line(aes(x = gy, y = ml, group = interaction(hatch.year, smo.age)), color = "grey") +
+  geom_point(data = data.biph %>% 
+               filter(sex == 2,
+                      #hatch.year.f %in% c(1,5,10,15,20,25)
+                      ),
+             aes(x = g.year, y = length_mm), size = 0.3, alpha = 0.1 ) +
+  facet_wrap(~spat.unit) +
+  theme_minimal() +
+  labs(title = "males")
 
 ```
 
@@ -448,23 +529,5 @@ as.data.frame(corr) %>%
   scale_x_discrete(labels = su.labs) +
   scale_y_discrete(labels = su.labs) +
   theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-
-
-# one sample alternative
-# R_sample <- matrix(samp[sample(nrow(samp),1), cols], 12, 12)
-# corr = crossprod(R_sample)  ## i.e., t(R_sample) %*% R_sample
-# library(reshape2)
-# melt(corr) %>%
-#   left_join(var.lats, by = c("Var1" = "su")) %>%
-#   left_join(var.lats, by = c("Var2" = "su"), suffix = c(".x", ".y")) %>%
-#   mutate(Var1 = reorder(Var1, m.lat.x),
-#          Var2 = reorder(Var2, -m.lat.y)) %>%
-#   ggplot(aes(x=Var2, y=Var1, fill = value)) +
-#   geom_tile() +
-#   scale_fill_viridis_c() +
-#   scale_x_discrete(labels = su.labs) +
-#   scale_y_discrete(labels = su.labs) +
-#   theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-  
 
 ```

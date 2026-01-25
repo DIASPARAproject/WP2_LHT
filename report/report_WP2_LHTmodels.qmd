@@ -26,32 +26,32 @@ include-after-body: "footer.html"
 
 ## Introduction
 
-Diadromous species such as eel and salmon exhibit large variation in life histories across their distribution range in response to environmental variation [REF]. Furthermore, they are exposed to multiple anthropogenic stressors across habitats and may be particularly vulnerable to climate change [@moll2024]. Consequently, an improved state of knowledge on spatiotemporal variation in life histories of salmon and eel could help better predict causes to long term population declines and identify future threats and needs for managemen aiming towards an ecosystem based approach to fisheries management. To provide this knowledge, the DIASPARA work package 2.2 constructs spatiotemporal models of key life history traits (LHT) for salmon and eel with the specific  aims to improve stock assessment models.
+Diadromous species such as European eel and Atlantic salmon exhibit large variation in life histories across their distribution range in response to environmental variation [REF]. Furthermore, they are exposed to multiple anthropogenic stressors across habitats and may be particularly vulnerable to climate change [@moll2024] with affects om their life histories. Consequently, an improved state of knowledge on spatiotemporal variation in life histories of salmon and eel could help better predict causes to long term population declines and identify future threats and needs for management aiming towards an ecosystem based approach to managing fisheries. To provide this knowledge, the DIASPARA work package 2.2 constructs spatiotemporal models of key life history traits (LHT) for salmon and eel with the specific  aims to improve stock assessment models.
 
-We use hierarchical Bayesian models for builiding LHT models due the framework's flexibility in tailoring process models, estimate uncertainty across hierarchical levels, share information across spatiotemporal scales to improve estimates in of data poor areas and infer large scale processes from smaller scales, and make use of prior information to improve estimates of biological processes.
+We use hierarchical Bayesian models for building LHT models due the framework's flexibility in tailoring process models, estimate uncertainty across hierarchical levels, share information across spatiotemporal scales to improve estimates in of data poor areas and infer large scale processes from smaller scales, and make use of prior information to improve estimates of biological processes.
 
-Our definition of spatial units are based on relevant scales for species specific ecological, genetic and environmental processes and for management purposes. For salmon the spatial units we used assessement units (AU) used in the ICES Baltic salmon and Trout Asessment group working group (WGBAST) in which five out of six AU:s are repesented in teh data (AU:1-5) as well as a unit for Baltic salmon with assessment unit unknown (AU:NA). For Atlantic salmon, we used either the ICES Working Group on North Atlantic Salmon (WGNAS) stock units (for Sweden) or finer scale groupings: French data based on genetic analyses [REF] and Irish data based on costal areas. For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and eco-regions (definition from?). Each river basin is contained within a single eco-region.
+Our definition of spatial units are based on relevant scales for species specific ecological, genetic and environmental processes and for management purposes. For salmon, the spatial units we used assessment units (AU) used in the ICES Baltic salmon and Trout Assessment group working group (WGBAST) in which five out of six AU:s are represented in the data (AU:1-5) as well as a unit for Baltic salmon with assessment unit unknown (AU:NA). For Atlantic salmon, we used either the ICES Working Group on North Atlantic Salmon (WGNAS) stock units (for Sweden) or finer scale groupings: French data based on genetic analyses [@perrier2011] and Irish data based on costal areas. For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and eco-regions (definition from??). Each river basin is contained within a single eco-region.
 
-The current analysis comprise two LHT:s (and models) for each species: Yellow eel growth / length at age, eel length at silvering, salmon growth / length at age and salmon fecundity. The choice of LHTs are based on managment needs and readily avaibale data.
+The current analysis comprise two LHT:s (and models) for each species: Yellow eel growth / length at age, eel length at silvering, salmon growth / length at age and salmon fecundity. The choice of LHTs are based on management needs and availability of data.
 
 ## Eel
 
 ### Spatial variation in yellow eel length at age
 
-To describe spatial variation in individual body length as a function of age in fecundity, we used the Schnute growth function. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. This is suitable for eel which shows large variation in length at age between the sexes and throughout its distribution area.  
+To describe spatial variation in individual body length as a function of age, we used the Schnute growth function [@schnute1981]. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. This is suitable for eel as it displays large variation in length at age between the sexes and throughout its distribution area.  
 
-In this model, we account for the correlation between the parameters in the Schnute growth equation at nested spatial scales having them vary through river basin specific estimates nested in eco-regions. We estimate spatial correaltion between the parameters across eco-regions.
+In this model, we estimate spatial correlation between the Schnute parameters across eco-regions. We account for this correlation between the parameters in the Schnute growth equation at nested spatial scales having them vary through river basin specific estimates nested in eco-regions.
 
 #### Data
 
-We used the data on yellow eels from the WGEEL database (described in XXX). We removed individuls without age and length measurements resulting in 23 703 observations used in the model. We retrieved information on river basin and region using the DIASPARA habitat database (DIASPARA WP3). Ten regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic sea, North sea north, North sea south, North sea UK, Norwegian sea, Baltic sea ICES subdivision 22 to 26, Baltic sea ICES subdivision 27 to 29 and Mediterranean west.
+We used the data on yellow eels from the WGEEL database (described in DIASPARA WP2.1 Data Inventory). We removed individuals without age and length measurements resulting in 23 703 observations used in the model. We retrieved information on river basin and region using the DIASPARA habitat database (DIASPARA WP3). Ten regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic sea, North sea north, North sea south, North sea UK, Norwegian sea, Baltic sea ICES subdivision 22 to 26, Baltic sea ICES subdivision 27 to 29 and Mediterranean west.
 
 Region specific temperature information from the HydroSHEDS database [@lehner2008] was retrieved using the the DIASPARA habitat database (DIASPARA WP3) and was z-score scaled before use in the model.
 
 
 #### Model description
 
-We modeled individual yellow eel age dependent length (growth) trajectories using the Schnute growth equation [@schnute1981]. In our model, we let key parameters of the Schnute equation vary by sex, environmental temperature, habitat type and river basin. River basins $b$ are nested within eco-regions $e$ (hereafter regions) and we assess the spatial correlation the Schnute-parameters across regions.
+We modeled individual yellow eel age dependent length (growth) trajectories using the Schnute growth equation [@schnute1981]. We let the parameters of the growth equation vary by sex, environmental temperature, habitat type and river basin. River basins $(j = 1,\dots,n_{j})$ are nested within eco-regions $(r = 1,\dots,n_{r})$ (hereafter regions) and we assess the spatial correlation of the Schnute-parameters across regions.
 
 Observed length $L_i$ of individual $i$ is modeled using a normal likelihood:
 
@@ -59,24 +59,24 @@ $L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$
 
 where the expected length $\mu_i$ is defined by the Schnute growth function:
 
-$\mu_{L_i} = \Bigg(L1_i^{p_i} + (L2_i^{p_i} - L1_j^{p_j}) \frac{1 - \exp(-K_j (age_i - A1))}{1 - \exp(-k_j (A2 - A1))} \Bigg)^{1/p_i}$
+$\mu_{L_i} = \Bigg(L1_i^{p_i} + (L2_i^{p_i} - L1_i^{p_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/p_i}$
 
-where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ the estimated lengths at $A1$ and $A2$, $P$ a shape parameter controlling curvature and $k$ is the growth coefficient.
+where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ the estimated lengths at $A1$ and $A2$, $p$ a shape parameter controlling curvature and $k$ is the growth coefficient.
 
-All four Schnute parameters are estimated at the river basin level. Covariate effects of temperature $b_t$ (for $L2$ and $k_i$), sex $b_s$ ($L2$ and $k_i$) and habitat $b_h$ ($k_i$) are additive. Missing individual sex observation are estimated by treating sex as a Bernoulli distributed random variable with probability $p_s$ (assigned to males).
+All four Schnute parameters are estimated at the river basin level. Covariate effects of temperature $b_t$ (for $L2$ and $k_i$), sex $b_s$ ($L2$ and $k_i$) and habitat $b_h$ (for $k_i$) are additive. Missing individual sex observations are estimated by treating sex as a Bernoulli distributed random variable with probability $p_s$ (assigned to males).
 
-Basin-specific mean Schnute parameter $p$ estimates $\mu_{p,j}$ ($n = n_b * n_p = 488$) were drawn from normal distributions with eco-region specific parameter means $\mu_{p,r}$ and standard deviations $sd_{p,r}$ ($n= n_r * n_p = 40$).
+Basin-specific mean Schnute parameter $par$ estimates $\mu_{par,j}$ ($n = n_b * n_par = 488$) were drawn from normal distributions with eco-region specific parameter means $\mu_{par,r}$ and standard deviations $sd_{p,r}$ ($n= n_r * n_par = 40$).
 
-$${\mu_{p,j}} \sim \text{Normal}(\boldsymbol{\mu_{p,r}}, \boldsymbol{\sigma_{p,r}})$$
-In turn, $\mu_{p,r}$ are drawn from a multivariate distribution of with a mean vector $\mu_{p}$ and covariance matrix $\Sigma_{g}$
+$${\mu_{par,j}} \sim \text{Normal}(\boldsymbol{\mu_{par,r}}, \boldsymbol{\sigma_{par,r}})$$
+In turn, $\mu_{par,r}$ are drawn from a multivariate distribution of with a mean vector $\mu_{par}$ and covariance matrix $\Sigma_{par}$
 
-$$\boldsymbol{\mu_{p,r}} \sim \text{MVN}(\boldsymbol{\mu_p}, \Sigma_{p}),$$
-which is estimated using an LKJ prior on the correlation matrix of $\Sigma_{p}$ and 
-$$\Sigma_p = D R_p D,$$
+$$\boldsymbol{\mu_{par,r}} \sim \text{MVN}(\boldsymbol{\mu_par}, \Sigma_{par}),$$
+which is estimated using an LKJ prior on the correlation matrix of $\Sigma_{par}$ and 
+$$\Sigma_{par} = D R_{par} D,$$
 
-where $D$ is a diagonal matrix of region specific standard deviations $\sigma_{p}$. Global hyperparameters $\mu_{p}$ define the mean growth parameters for each region, while $\sigma_{p}$ defines region level variation (see @tbl-eelaa).
+where $D$ is a diagonal matrix of region specific standard deviations $\sigma_{par}$. Global hyperparameters $\mu_{par}$ define the mean growth parameters for each region, while $\sigma_{par}$ defines region level variation (see @tbl-eelaa).
 
-We chose weakly informative priors, using available literature values for asymptotic lengths $L1$ and growth coefficient $k$ from Fishbase [@fishbase2024].
+We chose weakly informative priors and used available literature values for asymptotic lengths $L1$ and growth coefficient $k$ from Fishbase [@fishbase2024].
 
 The model was implemented in NIMBLE, and posterior distributions of model parameters was estimated using Hamiltonian Monte Carlo sampling. Convergence was assessed by checking trace plots and Gelman–Rubin diagnostics [@gelman1992] (see model scripts and summary for details on model formulation and diagnostics).
 
@@ -84,19 +84,19 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 | Parameter | Description | Prior distribution | Values |
 |----------|----------------|--------------|-----------------|
 | $\sigma_L$ | Observation-level SD of length | $\text{Exponential}(0.01)$ | 
-| $\boldsymbol{\mu_{p,j}}$ | Basin specific growth parameters | $\text{Normal}(\mu_{p,r}, sd_{p,r})$ | |
-| $\boldsymbol{\mu_{p,r}}$ | Region specific growth parameters | $\text{MVN}(\boldsymbol{\mu_p}, \Sigma_{p})$ | |
-| $\boldsymbol{\mu_p}$ | Region-specific mean $L_1$ | $\text{Normal}(4.49, 0.47)$ | * |
-| $\boldsymbol{\mu_p}$ | Region-specific mean $p$ | $\text{Normal}(0, 0.5)$ | |
-| $\boldsymbol{\mu_p}$ | Region-specific mean $L_2$ | $\text{Normal}(6.72, 0.47)$ | * |
-| $\boldsymbol{\mu_p}$ | Region-specific mean $k$ | $\text{Normal}(-2.23, 0.47)$ |* |
-| $\sigma_{par}$ | Region-level standard deviation for $L_1,p,L_2,k$ | Exponential, weakly informative |*|
+| $\boldsymbol{\mu_{par,j}}$ | Basin specific growth parameters | $\text{Normal}(\mu_{par,r}, sd_{p,r})$ | |
+| $\boldsymbol{\mu_{par,r}}$ | Region specific growth parameters | $\text{MVN}(\boldsymbol{\mu_{par}}, \Sigma_{par})$ | |
+| $\boldsymbol{\mu_{par}}[1]$ | Region-specific mean $L_1$ | $\text{Normal}(4.49, 0.47)$ | * |
+| $\boldsymbol{\mu_{par}}[2]$ | Region-specific mean $p$ | $\text{Normal}(0, 0.5)$ | |
+| $\boldsymbol{\mu_{par}}[3]$ | Region-specific mean $L_2$ | $\text{Normal}(6.72, 0.47)$ | * |
+| $\boldsymbol{\mu_p[4]}$ | Region-specific mean $k$ | $\text{Normal}(-2.23, 0.47)$ |* |
+| $\sigma_{par}$ | Region-level standard deviations for $L_1,p,L_2,k$ | Exponential, weakly informative |*|
 | $R_p$ | Correlation among regions  | $\text{LKJ}(\eta = 2)$ |
 | $\Sigma_p$  | Spatial covariance matrix for $p$ | $D,R_p,D$ |
 | $b_{sL}, b_{sK}$ | Sex effect on $L2$ and $K$ | $\text{Normal}(0,1)$ ||
 | $b_{tL}, b_{tK}$ | Temperature effect on $L2$ and $K$  | $\text{Normal}(0,1)$ ||
 | $h_k$ | Habitat effect on $k$ | $\text{Normal}(0,0.1)$ ||
-| $p_{s_1}$ | Probability of being male (for missing sex) | $\text{Beta}(1,1)$ ||
+| $p_{s_1}$ | Probability of being male (for imputing missing sex) | $\text{Beta}(1,1)$ ||
 
 : Prior distributions for parameters in the eel length at age model.(\**Values for $L1$, $L2$ and $k$ are estimated on log scale and are lognormal transformations of estimates from Fishbase [@fishbase2024]*.
 :::
@@ -111,7 +111,7 @@ Observed and model predicted yellow eel length at age by eco-region.
 ::: {#fig-elaa2}
 ![](elaa_L1.png){width=80%}
 
-Posterior estimates of $L_1$ by region (black line) and basin (grey lines). Paramters are estimated for females (see covariate effect $b_{sL}$)
+Posterior estimates of $L_1$ by region (black line) and basin (grey lines). Parameters are estimated for females (see covariate effect $b_{sL}$)
 :::
 ::: {#fig-elaa3}
 ![](elaa_P.png){width=80%}
@@ -126,15 +126,15 @@ Posterior estimates of $L_2$ by region (black line) and basin (grey lines).
 ::: {#fig-elaa5}
 ![](elaa_k.png){width=80%}
 
-Posterior estimates of $k$ by region (black line) and basin (grey lines). Paramters are estimated for females (see covariate effect $b_{sk}$)
+Posterior estimates of $k$ by region (black line) and basin (grey lines). Parameters are estimated for females (see covariate effect $b_{sk}$)
 :::
 ::: {#fig-elaa6}
-![](elaa_fc.png){width=80%}
+![](elaa_fc.png){}
 
 Predicted male yellow eel length at age ($\mu_{L_i}$). Boxes are region specific median estimates with interquartile range and outliers are in grey. The line shows basin specific growth curves. 
 :::
 ::: {#fig-elaa7}
-![](elaa_mc.png){width=80%}
+![](elaa_mc.png){}
 
 Predicted male yellow eel length at age ($\mu_{L_i}$). Boxes are region specific median estimates with interquartile range and outliers are in grey. The line shows basin specific growth curves. 
 :::
@@ -152,7 +152,7 @@ We modeled body length at silvering using hierarchical lognormal regression acco
 
 #### Data
 
-We used the data on silver eels from the WGEEL database (described in XXX) from 1998 an onwards (earlier data was excluded to reduce number of estimated nodes without data). We retrieved information on region using the DIASPARA habitat database (DIASPARA WP3). After removing observations from the Norwegian sea (due to only three silver eels from this region), nine regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic sea, North sea north, North sea south, North sea UK, Baltic sea ICES subdivision 22 to 26, Baltic sea ICES subdivision 27 to 29 and Mediterranean west. The resulting data set contained 147 494 observations.
+We used the data on silver eels from the WGEEL database (described in DIASPARA WP2.1 Data Inventory) from 1998 an onwards (earlier data was excluded to reduce number of estimated nodes without data). We retrieved information on region using the DIASPARA habitat database (DIASPARA WP3). After removing observations from the Norwegian sea (due to only three silver eels from this region), nine regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic sea, North sea north, North sea south, North sea UK, Baltic sea ICES subdivision 22 to 26, Baltic sea ICES subdivision 27 to 29 and Mediterranean west. The resulting data set contained 147 494 observations.
 
 Region specific temperature information from the HydroSHEDS database [@lehner2008] was retrieved using the the DIASPARA habitat database (DIASPARA WP3) and was z-score scaled before use in the model.
 
@@ -171,7 +171,6 @@ where $\alpha_{j,year}$ represents the intercept for region $j = 1,\dots,n_{j}$ 
 To account for temporal autocorrelation and spatial correlation, region specific intercepts were modeled as a multivariate random walk across years. Here, the intercepts in the first year were assigned a hierarchical prior to share information across regions,
 
 $$\alpha_{j,1} \sim \text{Normal}(\mu_{\alpha,j},\, \sigma_{\alpha,j})$$
-
 In subsequent years, the vector of intercepts follow a multivariate normal distribution
 
 $$\boldsymbol{\alpha}_{i+1} \sim \text{MVN}(\boldsymbol{\alpha}_{i},\, \Sigma_\alpha),$$
@@ -188,21 +187,22 @@ $$\mu_{\alpha,j} \sim \text{Normal}(\mu_{sl},\, \sigma_{sl}),$$
 
 $$\sigma_{\alpha,j} \sim \text{Gamma}(1.5,\, 1.5/\sigma_{sl}).$$
 
-and a region specific covariate effect of sex was modeled hierarchically,
+and we used a hierachhcial prior for a region specific covariate effect of sex,
 
 $$b_{s,j} \sim \text{Normal}(\mu_{bs}, \sigma_{bs})$$
 
-The hyperparameter values $\mu_{sl}, \sigma_{sl}, \mu_{bs}$ and $\sigma_{bs}$ are based on estimates of sex specific length at silvering in [-@durif2005]. The remaining parameters in the length at silvering model were assigned weakly informative priors (see @tbl-silver).
+The hyperparameter values $\mu_{sl}, \sigma_{sl}, \mu_{bs}$ and $\sigma_{bs}$ are based on estimates of sex specific length at silvering in @durif2005. The remaining parameters in the length at silvering model were assigned weakly informative priors (see @tbl-silver).
 
 ::: {#tbl-silver}
 | Parameter | Description | Prior distribution | Values |
 |----------|----------------|--------------|-----------------|
 | $\sigma$  | Observation-level SD on log scale | $\text{Exponential}(7)$  ||
 | $\alpha_{j,1}$  | Intercept for region $j$ in the first year  | $\text{Normal}(\mu_{\alpha,j}, \sigma_{\alpha0,j})$ ||
-| $b_{s,j}$ | Region specific effect of sex | $\text{Normal}(\mu_{sl},\sigma_{sl})$ | $\mu_{bs} = –0.52,\sigma_{bs} = 0.06$ *  |
+ $\text{Normal}(\mu_{sl},\sigma_{sl})$ | $\mu_{bs} = –0.52,\sigma_{bs} = 0.06$ *  |
 | $\alpha_{j,t}$  | Intercept for region $j$ in year $t > 1$  | $\text{MVN}(\alpha_{j,t-1}, \Sigma_p)$|
 | $\mu_{\alpha,j}$  | Mean intercept for region $l$ | $\text{Normal}(\mu_{sl},\sigma_{sl})$ | $\mu_{sl} = 6.47,\sigma_{sl} = 0.19$ * |
 | $\sigma_{\alpha,j}$ | Standard deviation of intercepts within region $l$  | $\text{Gamma}(1.5, 1.5/\sigma_{sl})$ | $\sigma_{sl} = 0.19$ * |
+| $b_{s,j}$ | Region specific effect of sex |
 | $b_t$ | Effect of temperature | $\text{Normal}(0, 1)$ |
 | $R_\alpha$ | Correlation among regions  | $\text{LKJ}(\eta = 2)$ ????|
 | $\Sigma_\alpha$  | Spatial covariance matrix for $\alpha$ | $D,R_\alpha,D$ |
@@ -213,8 +213,6 @@ The hyperparameter values $\mu_{sl}, \sigma_{sl}, \mu_{bs}$ and $\sigma_{bs}$ ar
 The model was implemented in NIMBLE, and posterior distributions of model parameters was estimated using Hamiltonian Monte Carlo sampling. Convergence was assessed by checking trace plots and Gelman–Rubin diagnostics [@gelman1992] (see model scripts and summary for details on model formulation and diagnostics).
 
 #### Results
-
-Substantial improvement of the model in terms of WAIC of adding age as a predictor covariate to the silvering model. However, few (~10 % ??) of silver eels are aged in the data and removing non aged individuals would leave too little data left for inference on spatiotemporal variation in length at silvering. 
 
 ::: {#fig-sil1}
 ![](silv_po.png){width=80%}
@@ -234,7 +232,6 @@ Female median length at silvering over time by eco-region. Boxes deliminate the 
 Male median length at silvering over time by eco-region. Boxes delimit the interquartile range, whiskers extend beyond that range and outliers are excluded. The line shows the global male median by year.
 :::
 
-
 ## Salmon
 
 ### Spatiotemporal variation in salmon length at age
@@ -245,7 +242,7 @@ The model predicts estimates growth for each sex, cohort and smolt age across sp
 
 #### Data
 
-We used data collected within the DIASPARA salmon data request on length data (total length in mm) on aged (in years) salmon individuals caught both in freshwater and at sea. The data included in the model comes from 12 spatial units: six in the Baltic sea (Assessment unit 1-5 and unknown (NA) assessment unit), the Swedish west coast, Brittany, lower Normandy, Adour, upper Normandy and the Irish west coast. We excluded individuals missing information of sex and age and individuals without an estimate of the age in the freshwater phase. This resulted in 79 559 individual observations for the model.
+We used data collected within the DIASPARA salmon data request on length data (total length in mm) on aged (in years) salmon individuals caught both in freshwater and at sea. The data included in the model comes from 12 spatial units: six in the Baltic sea (Assessment unit 1-5 and unknown (NA) assessment unit), the Swedish west coast, Brittany, lower Normandy, Adour, upper Normandy and the Irish west coast. We excluded non-aged individuals and individuals caught at sea and missing information of sex. This resulted in 79 559 individual observations for the model.
 
 To account for seasonal variation in growth, a growth year ($age_g$) is consider as starting on May 1. Consequently, we assumed that all individuals are born on first of May and a growth year represents estimated age + 1 (e.g. $age_g$ of age 0 individuals equals 1).
 
@@ -320,6 +317,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 ::: {#fig-salaa_poj}
 ![](salaa_poj.png){width=80%}
+
 Observed and model predicted freshwater phase length at age by spatial unit.
 :::
 
@@ -333,13 +331,13 @@ Observed and model predicted sea phase length at age by spatial unit.
 ::: {#fig-salaa_lb}
 ![](salaa_lb.png){width=80%}
 
-Salmon length at birth ($L_b$) over spatial units. Note that spatial units Adour and Baltic Sea AU:NA are lack freshwater observation data.
+Salmon length at birth ($L_b$) over spatial units. Regions are ordered by their mean laititude. Note that spatial units Adour and Baltic Sea AU:NA lack freshwater observation data. 
 :::
 
 ::: {#fig-salaa_r}
 ![](salaa_r.png){width=80%}
 
-Salmon freshwater linear growth rate ($r$) over spatial units. Note that spatial units Adour and Baltic Sea AU:NA are lack freshwater observation data.
+Salmon freshwater linear growth rate ($r$) over spatial units. Regions are ordered by their mean laititude. Note that spatial units Adour and Baltic Sea AU:NA are lack freshwater observation data.
 :::
 
 ::: {#fig-salaa_linf}
@@ -360,6 +358,11 @@ Salmon female growth coefficient ($k$) by spatial units over time. The
 Salmon male growth coefficient ($k$) by spatial units over time.
 :::
 
+::: {#fig-salaa_cur}
+![](salaa_cur.png){width=80%}
+
+Predicted salmon length at age ($\mu_{L,j,a,c,s,age_g} = L_{b,j} + r_j$). Boxes are spatial unit specific median estimates with interquartile range. Outliers are excluded.
+:::
 
 ### Spatial variation in salmon fecundity
 
@@ -367,7 +370,7 @@ To describe spatial variation in fecundity, we developed a model of number of eg
 
 #### Data 
 
-We used count data collected within the DIASPARA salmon data request. The data included in the model comes from 9 spatial units: the Baltic sea Assessment units 1-3, the Swedish west coast, Brittany, lower Normandy, upper Normandy, Allier-Gironde and the Irish west and north coasts. The data is described in detail in XXX. The data set used in the model contains 1799 individual observations.
+We used count data collected within the DIASPARA salmon data request. The data included in the model comes from 9 spatial units: the Baltic sea Assessment units 1-3, the Swedish west coast, Brittany, lower Normandy, upper Normandy, Allier-Gironde and the Irish west and north coasts. The data is described in detail in DIASPARA WP2.1 Data Inventory. The data set used in the model contains 1799 individual observations.
 
 The methodology for assessing number of eggs in salmon gonads vary between spatial units. Most importantly, the process of removing the eggs from the fish vary. In salmon hatchery breeding / rearing, the common method is to "strip" the salmon by hand by applying pressure to the abdomen of the spawning-ready females to expel the eggs. This leaves a varying amount of eggs left in the gonad resulting in uncertain counts. For scientific assessments, requiring more precise estimates of egg counts, stripping is either supplemented with removing the gonad (lethal method) and counting remaining eggs or all eggs are counted from the removed gonad (i.e. no stripping).
 
