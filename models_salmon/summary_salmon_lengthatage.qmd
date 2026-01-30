@@ -349,74 +349,102 @@ ggsave(paste0(home, "/report/salaa_linf.png"), width = 17, height = 14, units = 
 ```{r}
 gc()
 # based on l.mu (age.type = "both") 
-dfp <- laa.samples[[1]][sample(1:1500,1000), ] %>% # sample from one chain to reduce object size
+#dfp <- laa.samples[[1]][1:1000, ] %>% # sample from one chain to reduce object size
+dfp <- laa.samples[[1]] %>% # sample from one chain to reduce object size
   spread_draws(l.mu[su,smo.age,coh,sex,gy], sep = ",") %>%
-  ungroup() 
+  median_qi() 
 
 masu <- data.biph %>%
+  filter(!is.na(smo.age)) %>%
   summarise(ma = max(g.year), .by = su) %>%
   arrange(su)
 smcsu <- data.biph %>%
+  filter(!is.na(smo.age)) %>%
   distinct(su, hatch.year.f, smo.age, sex) %>%
   rename(coh = hatch.year.f) 
+
+# by smolt age 
+cohs <- 22
+dfp %>%
+  filter(gy <= masu[su,2])  %>%
+  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
+  mutate(sex = if_else(sex == 1, "f","m")) %>%
+  filter(sex == "f", 
+         coh %in% cohs) %>% # coh = 1 is 1998
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  ggplot() +
+  geom_line(aes(x = gy, y = l.mu, color = factor(smo.age)), linewidth = 0.1) +
+  geom_pointinterval(
+    aes(x = gy, y = l.mu, ymin = .lower, ymax = .upper, color = factor(smo.age)),
+    point_size = 0.5,
+    linewidth = 1
+  ) +
+  facet_wrap(~spat.unit, scales = "free") +
+  theme_minimal() +
+  labs(title = "females cohort 2020")
+ggsave(paste0(home, "/report/salaa_cfsa.png"), width = 17, height = 14, units = "cm")
 
 dfp %>%
   filter(gy <= masu[su,2])  %>%
   semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
-  filter(#sex == 1, #females
-         #coh %in% c(2,8,16)
-         ) %>%
-  ungroup() %>%
+  mutate(sex = if_else(sex == 1, "f","m")) %>%
+  filter(sex == "m", 
+         coh %in% cohs) %>%
   left_join(data.biph %>% distinct(su, spat.unit)) %>%
   ggplot() +
-  geom_boxplot(aes(x = factor(gy), y = l.mu, color = factor(sex)), 
-               outliers = FALSE) +
+  geom_line(aes(x = gy, y = l.mu, color = factor(smo.age)), linewidth = 0.1) +
+  geom_pointinterval(
+    aes(x = gy, y = l.mu, ymin = .lower, ymax = .upper, color = factor(smo.age)),
+    point_size = 0.5,
+    linewidth = 1
+  ) +
   facet_wrap(~spat.unit, scales = "free") +
   theme_minimal() +
-  labs(title = "females")
-ggsave(paste0(home, "/report/salaa_cur.png"), width = 17, height = 14, units = "cm")
+  labs(title = "males cohort 2020")
+ggsave(paste0(home, "/report/salaa_cmsa.png"), width = 17, height = 14, units = "cm")
 
+# by cohort
+# msm <- data.biph %>%
+#   filter(!is.na(smo.age)) %>%
+#   group_by(su) %>%
+#   count(smo.age) %>%
+#   slice_max(n) %>%
+#   ungroup()
+
+cohs <- c(1, 7, 14, 21,25)
 dfp %>%
-  filter(gy <= masu[su,2]) %>%
-  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
-  filter(sex == 1,
-         smo.age == c(1:3)) %>% #females
-  summarise(ml = median(l.mu), .by = c(su, coh, gy, smo.age)) %>%
-  rename(hatch.year.f = coh) %>%
+  filter(gy <= masu[su,2])  %>%
+  filter(smo.age == 2) %>%
+  semi_join(smcsu, by = c("su", "smo.age", "sex")) %>%
+  mutate(sex = if_else(sex == 1, "f","m")) %>%
+  filter(sex == "m",
+         coh %in% cohs
+         ) %>% 
   left_join(data.biph %>% distinct(su, spat.unit)) %>%
-  left_join(data.biph %>% distinct(hatch.year.f, hatch.year)) %>%
-  filter(!ml == 0) %>%
+  mutate(coh = coh + 1998) %>%
   ggplot() +
-  geom_line(aes(x = gy, y = ml, group = interaction(hatch.year, smo.age)), color = "grey") +
-  geom_point(data = data.biph %>% 
-               filter(sex == 1,
-                      #hatch.year.f %in% c(1,5,10,15,20,25)
-                      ),
-             aes(x = g.year, y = length_mm), size = 0.3, alpha = 0.1 ) +
-  facet_wrap(~spat.unit) +
-  theme_minimal() +
-  labs(title = "females")
-  
-dfp %>%
-  filter(gy <= masu[su,2]) %>%
-  semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
-  filter(sex == 2,
-         smo.age == c(1:3)) %>% #females
-  summarise(ml = median(l.mu), .by = c(su, coh, gy, smo.age)) %>%
-  rename(hatch.year.f = coh) %>%
-  left_join(data.biph %>% distinct(su, spat.unit)) %>%
-  left_join(data.biph %>% distinct(hatch.year.f, hatch.year)) %>%
-  filter(!ml == 0) %>%
-  ggplot() +
-  geom_line(aes(x = gy, y = ml, group = interaction(hatch.year, smo.age)), color = "grey") +
-  geom_point(data = data.biph %>% 
-               filter(sex == 2,
-                      #hatch.year.f %in% c(1,5,10,15,20,25)
-                      ),
-             aes(x = g.year, y = length_mm), size = 0.3, alpha = 0.1 ) +
+  geom_line(aes(x = gy, y = l.mu, color = factor(coh)), linewidth = .3) +
   facet_wrap(~spat.unit) +
   theme_minimal() +
   labs(title = "males")
+ggsave(paste0(home, "/report/salaa_cmc.png"), width = 17, height = 14, units = "cm")
+  
+dfp %>%
+  filter(gy <= masu[su,2])  %>%
+  filter(smo.age == 2) %>%
+  semi_join(smcsu, by = c("su", "smo.age", "sex")) %>%
+  mutate(sex = if_else(sex == 1, "f","m")) %>%
+  filter(sex == "f",
+         coh %in% cohs
+         ) %>% 
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  mutate(coh = coh + 1998) %>%
+  ggplot() +
+  geom_line(aes(x = gy, y = l.mu, color = factor(coh)), linewidth = .3) +
+  facet_wrap(~spat.unit) +
+  theme_minimal() +
+  labs(title = "females")
+ggsave(paste0(home, "/report/salaa_cfc.png"), width = 17, height = 14, units = "cm")
 
 ```
 

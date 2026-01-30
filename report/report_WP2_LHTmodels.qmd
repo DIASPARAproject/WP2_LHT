@@ -26,28 +26,31 @@ include-after-body: "footer.html"
 
 ## Introduction
 
-Diadromous species such as European eel and Atlantic salmon exhibit large variation in life histories across their distribution range in response to environmental variation [REF]. Furthermore, they are exposed to multiple anthropogenic stressors across habitats and may be particularly vulnerable to climate change [@moll2024] with affects om their life histories. Consequently, an improved state of knowledge on spatiotemporal variation in life histories of salmon and eel could help better predict causes to long term population declines and identify future threats and needs for management aiming towards an ecosystem based approach to managing fisheries. To provide this knowledge, the DIASPARA work package 2.2 constructs spatiotemporal models of key life history traits (LHT) for salmon and eel with the specific  aims to improve stock assessment models.
+{HD>>I think it might be worthwile to give a few more elements on the life cycle of the species, and especially to introduce the successive life stages that you will use latter. This is obvious for us, not necessary for every reader of the report. Moreover, it will be useful for your latter publication?<<}
 
-We use hierarchical Bayesian models for building LHT models due the framework's flexibility in tailoring process models, estimate uncertainty across hierarchical levels, share information across spatiotemporal scales to improve estimates in of data poor areas and infer large scale processes from smaller scales, and make use of prior information to improve estimates of biological processes.
+Diadromous species such as European eel and Atlantic salmon exhibit large variation in life histories across their distribution range correlated to environmental gradients [REF]{>>for eel: 10.1111/j.1467-2979.2010.00400.x; 10.2307/5507; 10.1139/cjfas-2016-0214<<}. Furthermore, they are exposed to multiple anthropogenic stressors across habitats and may be particularly vulnerable to climate change [@moll2024] affecting their life histories. 
 
-Our definition of spatial units are based on relevant scales for species specific ecological, genetic and environmental processes and for management purposes. For salmon, the spatial units we used assessment units (AU) used in the ICES Baltic salmon and Trout Assessment group working group (WGBAST) in which five out of six AU:s are represented in the data (AU:1-5) as well as a unit for Baltic salmon with assessment unit unknown (AU:NA). For Atlantic salmon, we used either the ICES Working Group on North Atlantic Salmon (WGNAS) stock units (for Sweden) or finer scale groupings: French data based on genetic analyses [@perrier2011] and Irish data based on costal areas. For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and eco-regions (definition from??). Each river basin is contained within a single eco-region.
+Since life history traits such as growth, survival and maturation are critical drivers of the population dynamics, enhancing the knowledge on spatiotemporal variations in life histories of salmon and eel could help better predict causes to long term population declines and identify future threats and needs for management aiming towards an ecosystem based approach to managing fisheries. To provide this knowledge, the DIASPARA work package 2.2 constructs spatiotemporal models of key life history traits (LHT) for salmon and eel with the specific  aims to improve stock assessment models.
 
-The current analysis comprise two LHT:s (and models) for each species: Yellow eel growth / length at age, eel length at silvering, salmon growth / length at age and salmon fecundity. The choice of LHTs are based on management needs and availability of data.
+{HD>>should we extend a bit the notion of nested spatial scale resulting from key feature of the species ecology: wide distribution, mixture of confined stages and mixed stages etc.? Elements are available in the project proposal<<}
+
+We use hierarchical Bayesian models for building LHT models due the framework's flexibility in tailoring process models, estimate uncertainty across hierarchical {>>the extension I propose above would help to understand the need for hierarchical approaches} levels, share information across spatiotemporal scales to improve estimates in of data poor areas and infer large scale processes from smaller scales, and make use of prior information to improve estimates of biological processes.
+
+Our definition of spatial units are based on relevant scales for species specific ecological, genetic and environmental processes and for management purposes. However, their scale is conditioned on data availability. For salmon, the spatial units we used assessment units (AU) used in the ICES Baltic salmon and Trout Assessment group working group (WGBAST) in which five out of six AU:s are represented in the data (AU:1-5) as well as a unit for Baltic salmon with assessment unit unknown (AU:NA). For Atlantic salmon, we used either the ICES Working Group on North Atlantic Salmon (WGNAS) stock units (for Sweden) or finer scale groupings: French data based on genetic analyses [@perrier2011] and Irish data based on costal areas. For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and ecoregions as described in teh DIASPARA WP3 habitat database (ICES ecoregions split using relevant catchments groupings). Each river basin is allocated to a single ecoregion based on the location of its marine outlet.
+
+The current analysis comprise two LHT:s (and models) for each species: Yellow eel growth / length at age, eel length at silvering, salmon growth / length at age and salmon fecundity. The choice of LHTs are based on management needs and availability of data. {>>could we say a bit more why those lht are important, that they are key parameters of the SAMs?<<}
 
 ## Eel
 
 ### Spatial variation in yellow eel length at age
 
-To describe spatial variation in individual body length as a function of age, we used the Schnute growth function [@schnute1981]. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. This is suitable for eel as it displays large variation in length at age between the sexes and throughout its distribution area.  
-
-In this model, we estimate spatial correlation between the Schnute parameters across eco-regions. We account for this correlation between the parameters in the Schnute growth equation at nested spatial scales having them vary through river basin specific estimates nested in eco-regions.
+To assess spatial variation in individual body length as a function of age, we used the Schnute growth function [@schnute1981]. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. This is suitable for eel as it displays large variation in length at age between the sexes and throughout its distribution area. In the model we estimate the parameters of the function at nested spatial scales (at river basins nested within ecoregions) and assess their spatial correlation across ecoregions.
 
 #### Data
 
-We used the data on yellow eels from the WGEEL database (described in DIASPARA WP2.1 Data Inventory). We removed individuals without age and length measurements resulting in 23 703 observations used in the model. We retrieved information on river basin and region using the DIASPARA habitat database (DIASPARA WP3). Ten regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic sea, North sea north, North sea south, North sea UK, Norwegian sea, Baltic sea ICES subdivision 22 to 26, Baltic sea ICES subdivision 27 to 29 and Mediterranean west.
+We used the data on yellow eels from the WGEEL database (described in DIASPARA WP2.1 Data Inventory). We removed individuals without age and length measurements resulting in 23 703 observations used in the model. We retrieved information on river basin and region using the DIASPARA habitat database (DIASPARA WP3). Ten regions were represented in the data: Adriatic sea, Bay of Biscay / Iberian peninsula, Celtic Sea, Northern North Sea, Southern North Sea, North Sea UK, Norwegian Sea, Baltic Sea ICES subdivisions 22 to 26, Baltic Sea ICES subdivisions 27 to 29 and Western Mediterranean.
 
 Region specific temperature information from the HydroSHEDS database [@lehner2008] was retrieved using the the DIASPARA habitat database (DIASPARA WP3) and was z-score scaled before use in the model.
-
 
 #### Model description
 
@@ -55,11 +58,11 @@ We modeled individual yellow eel age dependent length (growth) trajectories usin
 
 Observed length $L_i$ of individual $i$ is modeled using a normal likelihood:
 
-$L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$
+$L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$ 
 
 where the expected length $\mu_i$ is defined by the Schnute growth function:
 
-$\mu_{L_i} = \Bigg(L1_i^{p_i} + (L2_i^{p_i} - L1_i^{p_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/p_i}$
+$\mu_{L_i} = \Bigg(L1_i^{p_i} + (L2_i^{p_i} - L1_i^{p_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/p_i}$ 
 
 where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ the estimated lengths at $A1$ and $A2$, $p$ a shape parameter controlling curvature and $k$ is the growth coefficient.
 
@@ -315,6 +318,10 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 #### Results
 
+Convergence ?
+Majority of uncertainty in the first an second year at sea
+Latitudinal expected patterns are evident, r_j decreasing with latitude, Linf increasing with latitude, 
+
 ::: {#fig-salaa_poj}
 ![](salaa_poj.png){width=80%}
 
@@ -331,7 +338,7 @@ Observed and model predicted sea phase length at age by spatial unit.
 ::: {#fig-salaa_lb}
 ![](salaa_lb.png){width=80%}
 
-Salmon length at birth ($L_b$) over spatial units. Regions are ordered by their mean laititude. Note that spatial units Adour and Baltic Sea AU:NA lack freshwater observation data. 
+Salmon length at hatching ($L_b$) over spatial units. Regions are ordered by their mean laititude. Note that spatial units Adour and Baltic Sea AU:NA lack freshwater observation data. 
 :::
 
 ::: {#fig-salaa_r}

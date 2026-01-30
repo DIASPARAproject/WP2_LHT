@@ -258,20 +258,26 @@ ggsave(paste0(home, "/report/silv_po.png"), width = 17, height = 14, units = "cm
 
 ### Length over time
 ```{r, cache = FALSE}
+var.lats <- data.silv %>%
+  mutate(m.lat = mean(ser_y), .by = ecoreg) %>%
+  distinct(er, ecoreg, m.lat) %>%
+  arrange(-m.lat)
+
 dfp <- silv.samples[[1]] %>%
-  spread_draws(alpha[er, yr], bs[er],sep = ",") %>%
+  spread_draws(alpha[er, yr], bs[er], sep = ",") %>%
   mutate(male = alpha + bs,
          year = yr + 1997) %>%
   rename(female = alpha) %>%
   pivot_longer(cols = c("female","male"), names_to = "sex", values_to = "length") %>%
   mutate(length = exp(length)) %>%
-  left_join(data.silv %>% distinct(er,ecoreg)) %>%
   ungroup() %>%
-  mutate(m_length = median(length), .by = c(year,sex))
+  #left_join(data.silv %>% distinct(er,ecoreg)) %>%
+  left_join(var.lats) %>%
+  mutate(ecoreg = fct_reorder(ecoreg, -m.lat),
+         m_length = median(length), .by = c(year,sex))
 
 dfp %>%
   filter(sex == "female") %>%
-  ungroup() %>%
   ggplot() +
   geom_boxplot(aes(y = length, x = year, group = year), color = "#F8766D", outliers = FALSE) +
   geom_line(aes(y = m_length, x = year), color = "#F8766D", alpha = 0.4) +
@@ -307,6 +313,7 @@ silv.samples %>%
   facet_wrap(~sex, scales = "free_y") +
   theme_minimal() +
   labs(x = "year", caption = "centered by mean by sex")
+ggsave(paste0(home, "/report/silv_lcomp.png"), width = 17, height = 14, units = "cm")
 ```
 
 ### Correlation/covariance matrix
@@ -331,11 +338,6 @@ for (i in 1:nrow(samp)) {
 }
 
 corr <- apply(corr_arr, c(1, 2), median)
-
-var.lats <- data.silv %>%
-  mutate(m.lat = mean(ser_y), .by = ecoreg) %>%
-  distinct(er, ecoreg, m.lat) %>%
-  arrange(-m.lat)
 
 er.labs <- var.lats %>%
   select(er, ecoreg) %>%
