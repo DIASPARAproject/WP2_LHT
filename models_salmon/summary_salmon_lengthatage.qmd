@@ -223,14 +223,14 @@ dfj <- laa.samples %>%
          ind.id = i) %>%
   ungroup() %>%
   left_join(data.j %>%
-              select(length_mm_j,spat.unit) %>%
+              select(length_mm_j,spat.unit,g.year) %>%
               rename(obs.l = length_mm_j) %>%
               mutate(ind.id = row_number()), by = "ind.id")
 
 dfj %>%
   ggplot() +
   geom_abline(slope = 1) +
-  geom_point(aes(x = obs.l, y = pred.l),shape = 4,alpha = 0.5) +
+  geom_point(aes(x = obs.l, y = pred.l, color = factor(g.year)),shape = 4,alpha = 0.5) +
   theme_minimal() +
   facet_wrap(~spat.unit) +
   labs(caption = "Juvenile length at age" )
@@ -255,7 +255,7 @@ dfl <- data.b %>%
 dfl %>%
   ggplot() +
   geom_abline(slope = 1) +
-  geom_point(aes(x = obs.l, y = pred.l),shape = 4,alpha = 0.5) +
+  geom_point(aes(x = obs.l, y = pred.l, color = factor(g.year)),shape = 4,alpha = 0.5) +
   theme_minimal() +
   facet_wrap(~spat.unit)  +
   labs(caption = "Sea length at age" )
@@ -288,11 +288,11 @@ laa.samples %>%
   ungroup() %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
   left_join(var.lats) %>%
-  #filter(!spat.unit %in% c("Adour","Baltic.sea:AU-NA")) %>%
   mutate(r = reorder(su, m.lat)) %>%
   ggplot() +
   geom_boxplot(aes(x = .value, y = r),
-               outliers = FALSE) +
+               outliers = FALSE
+               ) +
   theme_minimal() +
   scale_y_discrete(labels = su.labs) +
   labs(y = "", x = "L_b")
@@ -347,7 +347,6 @@ ggsave(paste0(home, "/report/salaa_linf.png"), width = 17, height = 14, units = 
 
 ### Predicted length at age curves
 ```{r}
-gc()
 # based on l.mu (age.type = "both") 
 #dfp <- laa.samples[[1]][1:1000, ] %>% # sample from one chain to reduce object size
 dfp <- laa.samples[[1]] %>% # sample from one chain to reduce object size
@@ -363,8 +362,8 @@ smcsu <- data.biph %>%
   distinct(su, hatch.year.f, smo.age, sex) %>%
   rename(coh = hatch.year.f) 
 
-# by smolt age 
-cohs <- 22
+# by smolt age
+cohs <- 14
 dfp %>%
   filter(gy <= masu[su,2])  %>%
   semi_join(smcsu, by = c("su", "smo.age", "coh", "sex")) %>%
@@ -381,7 +380,7 @@ dfp %>%
   ) +
   facet_wrap(~spat.unit, scales = "free") +
   theme_minimal() +
-  labs(title = "females cohort 2020")
+  labs(y = expression(mu[L]), x = expression(age[g]), color = "smolt age")
 ggsave(paste0(home, "/report/salaa_cfsa.png"), width = 17, height = 14, units = "cm")
 
 dfp %>%
@@ -400,7 +399,7 @@ dfp %>%
   ) +
   facet_wrap(~spat.unit, scales = "free") +
   theme_minimal() +
-  labs(title = "males cohort 2020")
+  labs(y = expression(mu[L]), x = expression(age[g]), color = "smolt age")
 ggsave(paste0(home, "/report/salaa_cmsa.png"), width = 17, height = 14, units = "cm")
 
 # by cohort
@@ -426,7 +425,7 @@ dfp %>%
   geom_line(aes(x = gy, y = l.mu, color = factor(coh)), linewidth = .3) +
   facet_wrap(~spat.unit) +
   theme_minimal() +
-  labs(title = "males")
+  labs(y = expression(mu[L]), x = expression(age[g]), color = "cohort")
 ggsave(paste0(home, "/report/salaa_cmc.png"), width = 17, height = 14, units = "cm")
   
 dfp %>%
@@ -443,7 +442,7 @@ dfp %>%
   geom_line(aes(x = gy, y = l.mu, color = factor(coh)), linewidth = .3) +
   facet_wrap(~spat.unit) +
   theme_minimal() +
-  labs(title = "females")
+  labs(y = expression(mu[L]), x = expression(age[g]), color = "cohort")
 ggsave(paste0(home, "/report/salaa_cfc.png"), width = 17, height = 14, units = "cm")
 
 ```
@@ -458,6 +457,8 @@ tmpK <- laa.samples %>%
   mutate(year = coh + 1998,
          sex = ifelse(sex == 1, "m","f")) %>%
   mutate(m_length = median(.value), .by = c(year,sex)) %>%
+  left_join(var.lats) %>%
+  mutate(su = reorder(su, m.lat)) %>%
   filter(year < 2026)
 
 tmpK %>%

@@ -241,17 +241,19 @@ dfp <- silv.samples[[1]] %>%
          ind.id = i) %>%
   ungroup() %>%
   left_join(data.silv %>% 
-              select(length,ecoreg) %>% 
+              select(length,ecoreg,sex) %>% 
               rename(obs.sl = length) %>%
               mutate(ind.id = row_number()))
 
 dfp %>%
   slice_sample(n = 5000) %>%
+  mutate(sex = if_else(sex == 0, "female", "male")) %>%
   ggplot() +
   geom_abline(slope =1, color = "darkgrey") +
-  geom_point(aes(x = obs.sl, y = exp(pred.sl)), shape = 4,alpha = 0.7) +
+  geom_point(aes(x = obs.sl, y = exp(pred.sl), color = sex), shape = 4,alpha = 0.7) +
   facet_wrap(~ecoreg) +
-  theme_minimal() 
+  theme_minimal() +
+  labs(y="predicted", x="observed")
 ggsave(paste0(home, "/report/silv_po.png"), width = 17, height = 14, units = "cm")
 
 ```

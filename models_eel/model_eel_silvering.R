@@ -61,7 +61,7 @@ esilv.code <- nimbleCode({
   
   for(j in 1:ner){
     mu.a.gl[j] ~ dnorm(msl,sdsl)
-    sd.a.gl[j] ~ dgamma(shape = 1.5, rate = 1.5 / sdsl)
+    sd.a.gl[j] ~ dgamma(shape = 1.5, rate = 1.5 / sdsl) # Using sdsl, which is ~0.2 is arbitrary
   }
   
   # Durif 2005 indiv. mean, https://doi.org/10.1111/j.0022-1112.2005.00662.x

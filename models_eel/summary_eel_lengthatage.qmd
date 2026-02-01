@@ -261,43 +261,42 @@ dfp <- schnu.samples %>%
 dfp %>%
   filter(par == "L1") %>%
   ggplot() +
-  geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) + 
-  geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  theme(axis.text.y = element_blank()) +
+  geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
+  geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
   labs(title = "L1", caption = "black box is region specific posterior", x = "L1") 
-ggsave(paste0(home, "/report/elaa_L1.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/elaa_L1.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
   filter(par == "L2") %>%
   ggplot() +
-  geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) + 
-  geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  theme(axis.text.y = element_blank()) +
+  geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
+  geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
   labs(title = "L2", caption = "black box is region specific posterior", x = "L2") 
-ggsave(paste0(home, "/report/elaa_L2.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/elaa_L2.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
   filter(par == "K") %>%
   ggplot() +
-  geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) + 
-  geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  theme(axis.text.y = element_blank()) +
+  geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
+  geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
   labs(title = "k", caption = "black box is region specific posterior", x = "k") 
-ggsave(paste0(home, "/report/elaa_K.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/elaa_K.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
   filter(par == "P") %>%
   ggplot() +
-  geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) + 
-  geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  theme(axis.text.y = element_blank()) +
+  geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
+  geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
   labs(title = "P", caption = "black box is region specific posterior", x = "P") 
-ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 17, units = "cm")
 
+# dfp %>%
+#   filter(par == "K") %>%
+#   ggplot() +
+#   geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) +
+#   geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) +
+#   facet_wrap(~ecoreg, scales = "free", ncol = 3) +
+#   theme(axis.text.y = element_blank())
 ```
 
 
@@ -331,7 +330,7 @@ dfp <- schnu.samples %>%
          ind.id = i) %>%
   ungroup() %>%
   left_join(data.schnu %>% 
-              select(length,ecoreg) %>% 
+              select(length,ecoreg,age) %>% 
               rename(obs.l = length) %>%
               mutate(ind.id = row_number()))
 
@@ -339,7 +338,7 @@ dfp %>%
   slice_sample(n = 5000) %>%
   ggplot() +
   geom_abline(slope =1, color = "darkgrey") +
-  geom_point(aes(x = obs.l, y = pred.l), shape = 4, alpha = 0.7) +
+  geom_point(aes(x = obs.l, y = pred.l, color = age), shape = 4, alpha = 0.7) +
   facet_wrap(~ecoreg) +
   theme_minimal() 
 ggsave(paste0(home, "/report/elaa_po.png"), width = 17, height = 14, units = "cm")
@@ -372,7 +371,7 @@ dfp %>%
             aes(x = age, y = medl, group = factor(main_bas)), color = "red", alpha = 0.5, show.legend = FALSE) +
   facet_wrap(ecoreg~ser_hty_code) +
   theme_minimal() +
-  labs(title = "females")
+  labs(title = "females", y = "predicted length")
 ggsave(paste0(home, "/report/elaa_fc.png"), width = 17, height = 14, units = "cm")
 
 dfp %>%
@@ -388,6 +387,6 @@ dfp %>%
             aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
   facet_wrap(ecoreg~ser_hty_code) +
   theme_minimal() +
-  labs(title = "males")
+  labs(title = "males", y = "predicted length")
 ggsave(paste0(home, "/report/elaa_mc.png"), width = 17, height = 14, units = "cm")
 ``` 
