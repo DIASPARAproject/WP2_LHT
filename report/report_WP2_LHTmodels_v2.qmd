@@ -74,7 +74,7 @@ Observed length $L_i$ of individual $i$ is modeled using a normal likelihood:
 
 $L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$ 
 
-where the expected length $\mu_i$ is defined by the Schnute growth function:
+where the expected length $\mu_i$ is defined by the Schnute growth function (assuming $P \neq 0, k > 0$, @schnute1981):
 
 $\mu_{L_i} = \Bigg(L1_i^{P_i} + (L2_i^{P_i} - L1_i^{P_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/P_i}$ 
 
@@ -305,7 +305,7 @@ These issues are based on priority in recent work by ICES WGNAS and ICES WGBAST 
 
 ### Spatiotemporal variation in salmon length at age
 
-We built a spatiotemporal model of individual body length as a function of age using a biphasic growth model. A biphasic growth model, separating life stages, is suitable for salmon as growth  differ strongly between habitats [@nater2018]. The model predicts age dependent length increments of cohorts recursively using a linear function for the freshwater (juvenile) phase and the von Bertalanffy growth function for the sea phase [ @quince2008].
+We built a spatiotemporal model of individual body length as a function of age using a biphasic growth model. A biphasic growth model, separating life stages, is suitable for salmon as growth  differ strongly between habitats [@nater2018]. The model predicts age dependent length increments of cohorts recursively using a linear function for the freshwater (juvenile) phase and the von Bertalanffy growth function for the sea phase [@quince2008].
 
 The model estimates growth for each sex, cohort (birth year) and smolt age across spatial units and over time.
 
@@ -389,7 +389,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 Convergence ?
 Majority of uncertainty in the first an second year at sea
-Latitudinal expected patterns are evident, r_j decreasing with latitude, Linf increasing with latitude, growth pars idiffers much in AU1, we´re ecxpeting those to be different but they may be poor estimates.
+Latitudinal expected patterns are evident, r_j decreasing with latitude, Linf increasing with latitude, growth pars differs much in AU1, we´re expecting those to be different but they may be poor estimates.
 
 {HD>>same as for other sections, it would be great to further comment on the results: here you seem to have clear temporal patters, strong spatial heterogeneity. It seems also that there are differcens between BAST and NAS, so lot of things to comment<<}
 

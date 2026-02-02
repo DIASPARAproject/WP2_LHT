@@ -3250,7 +3250,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">01-02-2026</p>
+        <p class="date">02-02-2026</p>
       </div>
     </div>
     
@@ -3334,7 +3334,7 @@ window.Quarto = {
 <p>We modeled yellow eel age dependent length (growth) trajectories using the Schnute growth equation <span class="citation" data-cites="schnute1981">(<a href="#ref-schnute1981" role="doc-biblioref">Schnute 1981</a>)</span>. We let the parameters of the growth equation vary by sex, environmental temperature, habitat type and river basin. River basins <span class="math inline">\((j = 1,\dots,n_{j})\)</span> are nested within ecoregions <span class="math inline">\((r = 1,\dots,n_{r})\)</span> (hereafter regions). We let the parameters of the growth equation vary by sex, environmental temperature, habitat type and river basin. River basins <span class="math inline">\((j = 1,\dots,n_{j})\)</span> are nested within ecoregions <span class="math inline">\((r = 1,\dots,n_{r})\)</span> (hereafter regions).</p>
 <p>Observed length <span class="math inline">\(L_i\)</span> of individual <span class="math inline">\(i\)</span> is modeled using a normal likelihood:</p>
 <p><span class="math inline">\(L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)\)</span></p>
-<p>where the expected length <span class="math inline">\(\mu_i\)</span> is defined by the Schnute growth function:</p>
+<p>where the expected length <span class="math inline">\(\mu_i\)</span> is defined by the Schnute growth function (assuming <span class="math inline">\(P \neq 0, k &gt; 0\)</span>, <span class="citation" data-cites="schnute1981">Schnute (<a href="#ref-schnute1981" role="doc-biblioref">1981</a>)</span>):</p>
 <p><span class="math inline">\(\mu_{L_i} = \Bigg(L1_i^{P_i} + (L2_i^{P_i} - L1_i^{P_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/P_i}\)</span></p>
 <p>where <span class="math inline">\(A1\)</span> and <span class="math inline">\(A2\)</span> are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, <span class="math inline">\(L1\)</span> and <span class="math inline">\(L2\)</span> the estimated lengths at <span class="math inline">\(A1\)</span> and <span class="math inline">\(A2\)</span>, <span class="math inline">\(p\)</span> a shape parameter controlling curvature and <span class="math inline">\(k\)</span> is the growth coefficient.</p>
 <p>All four Schnute parameters are estimated with a river basin level intercept and with additive covariate effects of temperature <span class="math inline">\(b_t\)</span> (for <span class="math inline">\(L2\)</span> and <span class="math inline">\(k_i\)</span>), sex <span class="math inline">\(b_s\)</span> (<span class="math inline">\(L2\)</span> and <span class="math inline">\(k_i\)</span>) and habitat <span class="math inline">\(b_h\)</span> (for <span class="math inline">\(k_i\)</span>):</p>
@@ -3843,7 +3843,7 @@ Table 3: Prior distributions for parameters in the salmon length at age model. 
 </section>
 <section id="results-2" class="level4">
 <h4 class="anchored" data-anchor-id="results-2">Results</h4>
-<p>Convergence ? Majority of uncertainty in the first an second year at sea Latitudinal expected patterns are evident, r_j decreasing with latitude, Linf increasing with latitude, growth pars idiffers much in AU1, we´re ecxpeting those to be different but they may be poor estimates.</p>
+<p>Convergence ? Majority of uncertainty in the first an second year at sea Latitudinal expected patterns are evident, r_j decreasing with latitude, Linf increasing with latitude, growth pars differs much in AU1, we´re expecting those to be different but they may be poor estimates.</p>
 <p>{HD&gt;&gt;same as for other sections, it would be great to further comment on the results: here you seem to have clear temporal patters, strong spatial heterogeneity. It seems also that there are differcens between BAST and NAS, so lot of things to comment&lt;&lt;}</p>
 <div id="fig-salaa_poj" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
