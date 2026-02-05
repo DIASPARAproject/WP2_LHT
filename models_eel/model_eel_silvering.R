@@ -11,7 +11,7 @@ esilv.code <- nimbleCode({
   
   s.sigma ~ dexp(7)
   
-  # first year
+  # first year and bs
   for(l in 1:ner){
     alpha[l,1] ~ dnorm(mu.a.gl[l], sd = sd.a.gl[l]) 
     bs[l] ~ dnorm(mbsl, sd = sdbsl)

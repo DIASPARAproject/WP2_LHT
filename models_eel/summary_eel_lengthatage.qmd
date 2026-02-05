@@ -73,6 +73,7 @@ data.schnu <- df.eel %>%
          er = as.integer(factor(ecoreg)),
          hab = as.integer(factor(ser_hty_code)),
          temp.sc = (tmp_dc_uyr - mean(tmp_dc_uyr))/sd(tmp_dc_uyr)) 
+
 ```
 
 ### Plot length at age data
@@ -259,6 +260,9 @@ dfp <- schnu.samples %>%
   mutate(ecoreg = fct_reorder(ecoreg, -m.lat)) 
   
 dfp %>%
+  summarise(mp = median(val), .by = par)
+
+dfp %>%
   filter(par == "L1") %>%
   ggplot() +
   geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
@@ -308,15 +312,18 @@ schnu.samples %>%
   left_join(data.schnu %>% distinct(hab,ser_hty_code)) %>%
   #filter(!is.na(ecoreg)) %>%
   ggplot() +
-  geom_density(aes(x = .value, color = factor(ser_hty_code))) +
+  geom_boxplot(aes(x = .value, y = ser_hty_code)) +
   #facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  labs(title = "habitat")
-  
+  labs(y = "habitat") +
+
 schnu.samples %>%
   gather_draws(btL,btK,bsL,bsK) %>%
+  ungroup() %>%
   ggplot() +
-  geom_density(aes(x = .value, color = .variable)) +
-  facet_wrap(~.variable, scales = "free")
+  geom_boxplot(aes(x = .value)) +
+  facet_wrap(~.variable, ncol = 1 , scales = "free") +
+  theme(axis.text.y = element_blank())
+  labs(y = "")
 ggsave(paste0(home, "/report/elaa_bLK.png"), width = 17, height = 14, units = "cm")
 ```
 
@@ -353,40 +360,50 @@ dfp <- schnu.samples[[1]] %>% # use one chain to reduce object size
   ungroup() %>%
   left_join(data.schnu %>% select(main_bas, ser_hty_code, ecoreg, age, length) %>% mutate(id = row_number()), join_by(i == id))  %>%
   left_join(var.lats) %>%
-  mutate(ecoreg = fct_reorder(ecoreg, -m.lat)) 
+  mutate(ecoreg = fct_reorder(ecoreg, -m.lat),
+         sex = if_else(sex==1, "m", "f"))
 
 dfp.summb <- dfp %>%
-  summarise(medl = median(l.mu), .by = c(sex, age, ecoreg, main_bas, ser_hty_code))
-
-dfp %>%
-  filter(sex == 0) %>%
   ungroup() %>%
-  ggplot() +
-  geom_boxplot(aes(x = age, y = l.mu, group = age), 
-               outlier.color = "lightgrey",
-               outlier.fill = "lightgrey",
-               outlier.size = 0.5
-               ) +
-  geom_line(data = dfp.summb %>% filter(sex == 0), 
-            aes(x = age, y = medl, group = factor(main_bas)), color = "red", alpha = 0.5, show.legend = FALSE) +
-  facet_wrap(ecoreg~ser_hty_code) +
-  theme_minimal() +
-  labs(title = "females", y = "predicted length")
-ggsave(paste0(home, "/report/elaa_fc.png"), width = 17, height = 14, units = "cm")
+  summarise(medl = median(l.mu), .by = c(sex, age, ecoreg, main_bas))
 
 dfp %>%
-  filter(sex == 1) %>%
+  filter(sex == "f") %>%
   ungroup() %>%
   ggplot() +
   geom_boxplot(aes(x = age, y = l.mu, group = age),
                outlier.color = "lightgrey",
                outlier.fill = "lightgrey",
-               outlier.size = 0.5
+               outlier.size = 0.2
                ) +
-  geom_line(data = dfp.summb %>% filter(sex == 1), 
-            aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
-  facet_wrap(ecoreg~ser_hty_code) +
+  #geom_line(data = dfp.summb %>% filter(sex == "m"), 
+            #aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
+  facet_wrap(~ecoreg) +
   theme_minimal() +
-  labs(title = "males", y = "predicted length")
-ggsave(paste0(home, "/report/elaa_mc.png"), width = 17, height = 14, units = "cm")
+  labs(y = "predicted length")
+ggsave(paste0(home, "/report/elaa_ERfc.png"), width = 17, height = 17, units = "cm")
+
+dfp %>%
+  filter(sex == "m") %>%
+  ungroup() %>%
+  ggplot() +
+  geom_boxplot(aes(x = age, y = l.mu, group = age),
+               outlier.color = "lightgrey",
+               outlier.fill = "lightgrey",
+               outlier.size = 0.2
+               ) +
+  #geom_line(data = dfp.summb %>% filter(sex == "m"), 
+            #aes(x = age, y = medl, group = factor(main_bas), color = "red"), alpha = 0.5, show.legend = FALSE) +
+  facet_wrap(~ecoreg) +
+  theme_minimal() +
+  labs(y = "predicted length")
+ggsave(paste0(home, "/report/elaa_ERmc.png"), width = 17, height = 17, units = "cm")
+
+dfp.summb %>%
+  ggplot() +
+  geom_line(aes(x = age, y = medl, group = interaction(main_bas, sex), color = sex), alpha = 0.5) +
+  facet_wrap(~ecoreg) +
+  theme_minimal() +
+  labs(y = "predicted length")
+ggsave(paste0(home, "/report/elaa_RBc.png"), width = 17, height = 17, units = "cm")
 ``` 

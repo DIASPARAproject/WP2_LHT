@@ -29,7 +29,7 @@ execute:
 #| cache: false
 
 # Load libraries, install if needed
-pkgs <- c("tidyverse", "tidylog", "devtools","viridis","sf","patchwork","coda","boot","tidybayes","bayesplot", "nimble", "here","reshape2")
+pkgs <- c("tidyverse", "tidylog", "devtools","viridis","sf","patchwork","coda","boot","tidybayes","bayesplot", "nimble", "here","reshape2","sdmTMB")
 
 if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
     install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
@@ -37,6 +37,7 @@ if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
 
 invisible(lapply(pkgs, library, character.only = T))
 
+devtools::source_url("https://raw.githubusercontent.com/VThunell/diasp-lht/main/R/functions/map-plot.R") # message of SHA-1 hash for file
 options(ggplot2.continuous.colour = "viridis")
 theme_set(theme_minimal()) 
 
@@ -194,6 +195,11 @@ pl[which(pl < 1000 & pl > 0 )]
 silv.samples[[1]] %>%
   gather_draws(mu.a.gl[er], sep = ",") %>%
   ungroup() %>%
+  summarise(med = exp(median(.value)))
+
+silv.samples[[1]] %>%
+  gather_draws(mu.a.gl[er], sep = ",") %>%
+  ungroup() %>%
   left_join(data.silv %>% distinct(er,ecoreg)) %>%
   #filter(!is.na(ecoreg)) %>%
   ggplot() +
@@ -228,55 +234,92 @@ silv.samples[[1]] %>%
   facet_wrap(~.variable, scales = "free") +
   theme_minimal() 
 
+data.silv %>%
+  filter(ecoreg == "medwest") %>%
+  summarise(m = mean(temp.sc))
+
 ```
 
 
 ### Predicted / observed
 
 ```{r}
-dfp <- silv.samples[[1]] %>%
-  spread_draws(s.mu[i]) %>%
-  median_qi() %>%
-  rename(pred.sl = s.mu,
-         ind.id = i) %>%
-  ungroup() %>%
-  left_join(data.silv %>% 
-              select(length,ecoreg,sex) %>% 
-              rename(obs.sl = length) %>%
-              mutate(ind.id = row_number()))
-
-dfp %>%
-  slice_sample(n = 5000) %>%
-  mutate(sex = if_else(sex == 0, "female", "male")) %>%
-  ggplot() +
-  geom_abline(slope =1, color = "darkgrey") +
-  geom_point(aes(x = obs.sl, y = exp(pred.sl), color = sex), shape = 4,alpha = 0.7) +
-  facet_wrap(~ecoreg) +
-  theme_minimal() +
-  labs(y="predicted", x="observed")
-ggsave(paste0(home, "/report/silv_po.png"), width = 17, height = 14, units = "cm")
-
-```
-
-### Length over time
-```{r, cache = FALSE}
 var.lats <- data.silv %>%
   mutate(m.lat = mean(ser_y), .by = ecoreg) %>%
   distinct(er, ecoreg, m.lat) %>%
   arrange(-m.lat)
 
 dfp <- silv.samples[[1]] %>%
-  spread_draws(alpha[er, yr], bs[er], sep = ",") %>%
-  mutate(male = alpha + bs,
+  spread_draws(s.mu[i]) %>%
+  median_qi() %>%
+  rename(pred.sl = s.mu) %>%
+  ungroup() %>%
+  left_join(data.silv %>%
+              select(ecoreg,sex,fi_year,length) %>%
+              rename(obs.sl = length) %>%
+              mutate(ind.id = row_number(),
+                     sex = if_else(sex == 0, "female", "male"))) %>%
+  left_join(var.lats) %>%
+  mutate(ecoreg = fct_reorder(as.factor(ecoreg), -m.lat),
+         m_pred = median(pred.sl), .by = c(year,sex))
+
+dfp %>%
+  slice_sample(n = 5000) %>%
+  ggplot() +
+  geom_abline(slope = 1, color = "darkgrey") +
+  geom_point(aes(x = obs.sl, y = exp(pred.sl), color = sex), shape = 4, alpha = 0.7) +
+  facet_wrap(~ecoreg) +
+  theme_minimal() +
+  labs(y="predicted", x="observed")
+ggsave(paste0(home, "/report/silv_po.png"), width = 17, height = 14, units = "cm")
+```
+
+
+```{r}
+dfp <- silv.samples %>%
+  spread_draws(s.mu[i]) %>%
+  left_join(data.silv %>% 
+              select(ecoreg,sex,fi_year) %>% 
+              mutate(i = row_number()), 
+            by = "i") %>%
+  group_by(.draw, ecoreg, sex, fi_year) %>%
+  summarise(pred.sl = median(s.mu), .groups = "drop") %>%
+  left_join(var.lats) %>%
+  mutate(ecoreg = fct_reorder(as.factor(ecoreg), -m.lat),
+         sex = if_else(sex == 0, "female", "male")) %>%
+  mutate(m_pred = median(pred.sl), .by = c(sex))
+
+n.labs <- data.silv %>%
+  summarise(n = n(), .by = c(ecoreg, sex)) %>%
+  mutate(sex = if_else(sex==1, "female", "male"))
+
+dfp %>% summarise(mexp = exp(median(pred.sl)), .by= sex)
+
+dfp %>%
+  ggplot() +
+  geom_boxplot(aes(x = exp(pred.sl), y = ecoreg), outliers = FALSE, show.legend = FALSE) +
+  geom_vline(aes(xintercept = exp(m_pred)), color = "darkgrey", size = 0.5) +
+  facet_wrap(~sex, scales = "free_x") +
+  theme_minimal() +
+  labs(x = "Length at silvering [mm]", y = "Ecoregion")
+ggsave(paste0(home, "/report/silv_ERl.png"), width = 17, height = 14, units = "cm")
+
+```
+
+### Length over time
+```{r, cache = FALSE}
+dfp <- silv.samples[[1]] %>%
+  spread_draws(alpha[er, yr], bs[er], bt, sep = ",") %>%
+  left_join( data.silv %>% summarise(mt = mean(temp.sc), .by = er)) %>%
+  ungroup() %>%
+  mutate(female = alpha + bt*mt,
+         male = alpha + bs + bt*mt,
          year = yr + 1997) %>%
-  rename(female = alpha) %>%
   pivot_longer(cols = c("female","male"), names_to = "sex", values_to = "length") %>%
   mutate(length = exp(length)) %>%
-  ungroup() %>%
-  #left_join(data.silv %>% distinct(er,ecoreg)) %>%
+  mutate(m_length = median(length), .by = c(year,sex)) %>%
   left_join(var.lats) %>%
-  mutate(ecoreg = fct_reorder(ecoreg, -m.lat),
-         m_length = median(length), .by = c(year,sex))
+  mutate(ecoreg = fct_reorder(ecoreg, -m.lat)) 
 
 dfp %>%
   filter(sex == "female") %>%
@@ -288,10 +331,9 @@ dfp %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
   labs(x = "year")
 ggsave(paste0(home, "/report/silv_lf.png"), width = 17, height = 14, units = "cm")
-  
+
 dfp %>%
   filter(sex == "male") %>%
-  ungroup() %>%
   ggplot() +
   geom_boxplot(aes(y = length, x = year, group = year), color = "#00BFC4", outliers = FALSE) +
   geom_line(aes(y = m_length, x = year), color = "#00BFC4", alpha = 0.4) +
@@ -299,23 +341,20 @@ dfp %>%
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
   labs(x = "year")
-ggsave(paste0(home, "/report/silv_lm.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/silv_lm.png"), width = 17, height = 14, units = "cm")  
 
-silv.samples %>%
-  spread_draws(alpha[er, yr], bs[er],sep = ",") %>%
-  median_qi() %>%
-  mutate(male = alpha + bs,
-         year = yr + 1997) %>%
-  rename(female = alpha) %>%
-  pivot_longer(cols = c("female","male"), names_to = "sex", values_to = "length") %>%
-  left_join(data.silv %>% distinct(er,ecoreg)) %>%
-  mutate(length_mc = exp(length) - mean(exp(length)), .by = c(sex)) %>%
+data.silv %>%
+  filter(ecoreg == "nseasouth") %>%
+  summarise(ml = mean(length), .by = c(fi_year)) %>% arrange(fi_year)
+
+dfp %>%
+  mutate(length_mc = length - mean(length), .by = c(sex)) %>%
   ggplot() +
   geom_line(aes(y = length_mc, x = year, color = ecoreg)) +
   facet_wrap(~sex, scales = "free_y") +
   theme_minimal() +
   labs(x = "year", caption = "centered by mean by sex")
-ggsave(paste0(home, "/report/silv_lcomp.png"), width = 17, height = 14, units = "cm")
+# ggsave(paste0(home, "/report/silv_lcomp.png"), width = 17, height = 14, units = "cm")
 ```
 
 ### Correlation/covariance matrix
