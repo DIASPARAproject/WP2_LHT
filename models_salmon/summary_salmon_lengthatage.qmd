@@ -47,9 +47,7 @@ color_scheme_set("viridis")
 home <- here::here()
 ```
 
-## Length at age 
-
-### Read and define data
+## Read and define data
 
 ```{r}
 #| message: false
@@ -142,7 +140,8 @@ data.biph %>%
   ggplot(aes(x = juv.age, y =length_mm)) +
   geom_point(alpha = 0.3) +
   geom_smooth(method = lm) +
-  facet_wrap(~spat.unit)
+  facet_wrap(~spat.unit) +
+  xlim(0,NA)
   
 data.biph %>%
   filter(age.type == "both") %>%
@@ -152,6 +151,10 @@ data.biph %>%
   facet_wrap(~spat.unit) +
   scale_x_continuous(breaks = seq(0, 13, 1), limit = c(0,NA) ) +
   theme_minimal()
+
+# data.biph %>% 
+#   filter(spat.unit == "Ireland_west") %>%
+#   summarise(m = n(), .by = sea.age)
 
 ```
 
@@ -279,23 +282,18 @@ var.lats <- data.biph %>%
   distinct(su, spat.unit, m.lat) %>%
   arrange(-m.lat)
 
-su.labs <- var.lats %>%
-  select(su, spat.unit) %>%
-  { setNames(.$spat.unit, .$su) }
-
 laa.samples %>%
   gather_draws(lb.mu[su]) %>%
   ungroup() %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
   left_join(var.lats) %>%
-  mutate(r = reorder(su, m.lat)) %>%
+  mutate(spat.unit = reorder(spat.unit, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = .value, y = r),
+  geom_boxplot(aes(x = .value, y = spat.unit),
                outliers = FALSE
                ) +
   theme_minimal() +
-  scale_y_discrete(labels = su.labs) +
-  labs(y = "", x = "L_b")
+  labs(y = "", x = expression(l[b]))
 ggsave(paste0(home, "/report/salaa_lb.png"), width = 17, height = 14, units = "cm")
 
 laa.samples %>%
@@ -303,14 +301,12 @@ laa.samples %>%
   ungroup() %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
   left_join(var.lats) %>%
-  #filter(!spat.unit %in% c("Adour","Baltic.sea:AU-NA")) %>%
-  mutate(r = reorder(su, m.lat)) %>%
+  mutate(spat.unit = reorder(spat.unit, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = exp(.value), y = r),
+  geom_boxplot(aes(x = exp(.value), y = spat.unit),
                outliers = FALSE) +
   theme_minimal() +
-  scale_y_discrete(labels = su.labs) +
-  labs(y = "", x = "r_j")
+  labs(y = "", x = expression(r))
 ggsave(paste0(home, "/report/salaa_r.png"), width = 17, height = 14, units = "cm")
 
 laa.samples %>%
@@ -319,14 +315,14 @@ laa.samples %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
   left_join(var.lats) %>%
   mutate(sex = ifelse(sex == 1, "f","m"),
-         r = reorder(su, m.lat)) %>%
+         spat.unit = reorder(spat.unit, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = exp(.value), y = r, color = sex),
+  geom_boxplot(aes(x = exp(.value), y = spat.unit, color = sex),
                outliers = FALSE) +
   theme_minimal() +
-  coord_cartesian(xlim = c(-0.5,4)) +
-  scale_y_discrete(labels = su.labs) +
+  coord_cartesian(xlim = c(0,3.5)) +
   labs(y = "", x = "k")
+ggsave(paste0(home, "/report/salaa_k.png"), width = 17, height = 14, units = "cm")
 
 laa.samples %>%
   gather_draws(linf[su,sex], sep = ",") %>%
@@ -334,11 +330,10 @@ laa.samples %>%
   left_join(data.biph %>% distinct(su,spat.unit)) %>%
   left_join(var.lats) %>%
   mutate(sex = ifelse(sex == 1, "f","m"),
-         r = reorder(su, m.lat)) %>%
+         spat.unit = reorder(spat.unit, m.lat)) %>%
   ggplot() +
-  geom_boxplot(aes(x = exp(.value), y = r, color = sex),
+  geom_boxplot(aes(x = exp(.value), y = spat.unit, color = sex),
                outliers = FALSE) +
-  scale_y_discrete(labels = su.labs) +
   theme_minimal() +
   labs(y = "", x = expression(L[infinity]))
 ggsave(paste0(home, "/report/salaa_linf.png"), width = 17, height = 14, units = "cm")
@@ -348,10 +343,13 @@ ggsave(paste0(home, "/report/salaa_linf.png"), width = 17, height = 14, units = 
 ### Predicted length at age curves
 ```{r}
 # based on l.mu (age.type = "both") 
+
 #dfp <- laa.samples[[1]][1:1000, ] %>% # sample from one chain to reduce object size
 dfp <- laa.samples[[1]] %>% # sample from one chain to reduce object size
   spread_draws(l.mu[su,smo.age,coh,sex,gy], sep = ",") %>%
-  median_qi() 
+  median_qi() %>%
+  left_join(var.lats) %>%
+  mutate(spat.unit = reorder(spat.unit, m.lat))
 
 masu <- data.biph %>%
   filter(!is.na(smo.age)) %>%
@@ -378,7 +376,7 @@ dfp %>%
     point_size = 0.5,
     linewidth = 1
   ) +
-  facet_wrap(~spat.unit, scales = "free") +
+  facet_wrap(~spat.unit) +#, scales = "free") +
   theme_minimal() +
   labs(y = expression(mu[L]), x = expression(age[g]), color = "smolt age")
 ggsave(paste0(home, "/report/salaa_cfsa.png"), width = 17, height = 14, units = "cm")
@@ -397,7 +395,7 @@ dfp %>%
     point_size = 0.5,
     linewidth = 1
   ) +
-  facet_wrap(~spat.unit, scales = "free") +
+  facet_wrap(~spat.unit) +#, scales = "free") +
   theme_minimal() +
   labs(y = expression(mu[L]), x = expression(age[g]), color = "smolt age")
 ggsave(paste0(home, "/report/salaa_cmsa.png"), width = 17, height = 14, units = "cm")
@@ -453,14 +451,12 @@ ggsave(paste0(home, "/report/salaa_cfc.png"), width = 17, height = 14, units = "
 tmpK <- laa.samples %>%
   gather_draws(k.year[su, sex, coh], sep = ",") %>%
   ungroup() %>%
-  left_join(data.b %>% distinct(su, spat.unit)) %>% 
-  mutate(year = coh + 1998,
-         sex = ifelse(sex == 1, "m","f")) %>%
-  mutate(m_length = median(.value), .by = c(year,sex)) %>%
   left_join(var.lats) %>%
-  mutate(su = reorder(su, m.lat)) %>%
-  filter(year < 2026)
-
+  mutate(spat.unit = reorder(spat.unit, m.lat),
+         year = coh + 1998,
+         sex = ifelse(sex == 1, "m","f")) %>%
+  mutate(m_length = median(.value), .by = c(year,sex))
+    
 tmpK %>%
   ggplot() +
   geom_boxplot(aes(x = factor(year), y = exp(.value), color = factor(sex)),
@@ -472,7 +468,7 @@ tmpK %>%
 
 tmpK %>%
   filter(sex == "m",
-         !spat.unit == "Ireland_west"
+         #!spat.unit == "Ireland_west"
          ) %>%
   ungroup() %>%
   ggplot() +
@@ -481,12 +477,12 @@ tmpK %>%
   facet_wrap(~spat.unit, scales = "free") + 
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) +
-  labs(x = "year", y = "k", title = "males", caption = "line is global median by year and sex")
+  labs(x = "year", y = "k")
 ggsave(paste0(home, "/report/salaa_km.png"), width = 17, height = 14, units = "cm")
   
 tmpK %>%
   filter(sex == "f",
-         !spat.unit == "Ireland_west"
+         #!spat.unit == "Ireland_west"
          ) %>%
   ungroup() %>%
   ggplot() +
@@ -495,7 +491,7 @@ tmpK %>%
   facet_wrap(~spat.unit, scales = "free") + 
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) +
-  labs(x = "year", y = "k", title = "females", caption = "line is global median by year and sex")
+  labs(x = "year", y = "k")
 ggsave(paste0(home, "/report/salaa_kf.png"), width = 17, height = 14, units = "cm")
 
 tmpK %>%
@@ -557,6 +553,9 @@ as.data.frame(corr) %>%
   scale_fill_viridis_c() +
   scale_x_discrete(labels = su.labs) +
   scale_y_discrete(labels = su.labs) +
-  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
+  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
+  labs(x = "", y = "")
+ggsave(paste0(home, "/report/salaa_cor.png"), width = 17, height = 14, units = "cm")
+ 
 
 ```

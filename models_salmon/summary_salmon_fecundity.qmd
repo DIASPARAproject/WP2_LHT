@@ -116,8 +116,10 @@ fec.samples <- readRDS(paste0(home,"/models_salmon/samples/fec_samples_2026-01-1
 node.sub <- grep("^(a|b|r)", colnames(fec.samples[[1]]), value = TRUE)
 fec.samples[, node.sub[], drop = FALSE] %>%
 mcmc_trace()
-fec.samples[, node.sub[], drop = FALSE] %>%
-gelman.diag()
+pl <- fec.samples %>%
+gelman.diag(multivariate = FALSE)
+# which psrf are > 1.01 
+pl$psrf[which(pl$psrf[, 1] >= 1.01),]
 ```
 
 ### Predicted / observed
@@ -151,13 +153,20 @@ fec.samples %>%
   ggplot() +
   geom_density(aes(x = .value, color = .variable)) +
   facet_wrap(~.variable, scales = "free", ncol = 3) +
-  theme_minimal() 
+  theme_minimal()
+```
 
+### Fecundity curves 
+
+```{r}
 medianf <- fec.samples %>%
   gather_draws(a[su], b[su]) %>%
   ungroup() %>%
-  summarise(medf = median(.value), .by = .variable)
+  summarise(medf = median(.value), .by = .variable) %>%
+  mutate(ex = exp(medf))
 
+exp(medianf$medf[1]) + 2^medianf$medf[2]
+  
 fec.samples %>%
   gather_draws(b[su], a[su]) %>%
   ungroup() %>%
@@ -171,21 +180,36 @@ fec.samples %>%
   theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) 
 ggsave(paste0(home, "/report/fec_ab.png"), width = 17, height = 14, units = "cm")
 
+dl <- data.fec %>%
+  summarise(minl = min(length.lc),
+            maxl = max(length.lc), .by = su) %>%
+  arrange(su)
+  
+fec.samples %>%
+  spread_draws(a[su], b[su]) %>%
+  select(-.iteration, -.draw, -.chain) %>%
+  expand_grid(length.lc = seq(-0.5,0.5,0.001)) %>%
+  filter(length.lc > dl[su,2],
+         length.lc < dl[su,3]) %>%
+  mutate(fec = exp(a + b * length.lc),
+         length = exp(length.lc)*mean(data.fec$length_mm)) %>%
+  summarise(medf = median(fec), .by = c(su, length)) %>%
+  left_join(data.fec %>% distinct(su, spat.unit)) %>%
+  ggplot() +
+  geom_line(aes(x= length, y = medf, color = spat.unit)) +
+  labs( y = "#eggs", x = "length [mm]")
+ggsave(paste0(home, "/report/fec_nc.png"), width = 17, height = 14, units = "cm")
+
 fec.samples %>%
   spread_draws(b[su], a[su]) %>%
   median_qi() %>%
   tidyr::expand_grid(length.lc = seq(min(data.fec$length.lc), max(data.fec$length.lc), length.out = 1000)) %>%
   left_join(data.fec %>% distinct(su,spat.unit)) %>%
   ggplot() +
-  #geom_line(aes(x = length.lc, y = exp(a + length.lc*b), color = factor(spat.unit))) 
   geom_line(aes(x = length.lc, y = a + length.lc*b, color = spat.unit)) +
-  #geom_line(aes(x = length.lc, y = exp(a + length.lc*b), color = factor(spat.unit))) +
-  #             outliers = FALSE, show.legend = FALSE) +
-  #facet_wrap(~spat.unit, scales = "free_y") 
   theme_minimal() +
   labs(y = "log(fecundity)")
-ggsave(paste0(home, "/report/fec_fal.png"), width = 17, height = 14, units = "cm")
+ggsave(paste0(home, "/report/fec_lc.png"), width = 17, height = 14, units = "cm")
 
-  
 ```
 
