@@ -1,7 +1,9 @@
 # DIASPARA WP2.2 LHT models - Viktor Thunell
 # Eel length at silvering model and mcmc
 
-esilv.code <- nimbleCode({
+library(nimbleHMC)
+
+eelsilv.code <- nimbleCode({
   
   # Likelihood
   for(i in 1:nobs){
@@ -107,21 +109,21 @@ const <- list(nobs = nobs,
 eelsilv.model <- nimbleModel(eelsilv.code,
                              constants = const,
                              inits=inits(),
-                             data = data.esilv %>% select(length),buildDerivs = TRUE)
+                             data = data.silv %>% select(length),buildDerivs = TRUE)
 
 # compile model
-silv.c <- compileNimble(silv.model)
+eelsilv.c <- compileNimble(eelsilv.model)
 
 monits = c("s.sigma","mu.a.gl","sd.a.gl","alpha","bs","bt","s.mu","R")
 
 # configure and build mcmc and add hmc to alpha and sigma nodes
-silv.confmcmc <- configureHMC(silv.c, monitors = monits, enableWAIC = TRUE)
+eelsilv.confmcmc <- configureHMC(eelsilv.c, monitors = monits, enableWAIC = TRUE)
 
-silv.mcmc <- buildMCMC(silv.confmcmc, project = silv.model)
+eelsilv.mcmc <- buildMCMC(eelsilv.confmcmc, project = eelsilv.model)
 
 # compile mcmc
-silv.mcmcc <- compileNimble(silv.mcmc, project = silv.model)
+eelsilv.mcmcc <- compileNimble(eelsilv.mcmc, project = eelsilv.model)
 
-silv.samples <- runMCMC(silv.mcmcc, niter = 6000, nburnin = 3000, nchains = 2, thin = 2, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
+eelsilv.samples <- runMCMC(eelsilv.mcmcc, niter = 6000, nburnin = 3000, nchains = 2, thin = 2, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
 
-saveRDS(silv.samples, file = paste0(home,"/models_eel/samples/silv.samples_",Sys.Date(),".RData"))
+saveRDS(eelsilv.samples, file = paste0(home,"/models_eel/samples/eelsilv.samples_",Sys.Date(),".RData"))

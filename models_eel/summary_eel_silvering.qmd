@@ -53,9 +53,9 @@ home <- here::here()
 #| cache: false
 
 ## Read data
-df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_3.RData") %>%
-  st_drop_geometry()
-
+df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_4.RData") %>%
+  st_drop_geometry() %>%
+  mutate(ecoreg = str_remove(ecoreg, "/h$"))
 ```
 
 ## Length at Silvering
@@ -65,9 +65,8 @@ df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_3.RData") %>
 ```{r}
 dfp <- df.eel %>%
   filter(fi_lfs_code == "S",
-         fi_year > 1997,
-         # norway has three silver eels in total, so I remove this
-         !ecoreg == "norwegian") %>% 
+         fi_year > 1997
+         ) %>% 
   rename(length = lengthmm) %>%
   mutate(sex = as.integer(if_else(sex == "f", 0, 1)))
   
@@ -123,12 +122,12 @@ data.silv %>%
 # Load samples
 # readRDS(paste0(home,"/data/silv.samples_1214.RData"))$WAIC
 # readRDS(paste0(home,"/data/silv.samples_1216.RData"))$WAIC
-silv.samples <- readRDS(paste0(home,"/models_eel/samples/silv.samples_2026-01-08.RData"))$samples # v9
+silv.samples <- readRDS(paste0(home,"/models_eel/samples/eelsilv.samples_2026-02-09.RData"))$samples # v9
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
-# source(file = paste0(home,"/Eel models/2-2_model_eel_silver_v5.R"))
-# Sys.time() - t # approx xxx hours with xx million hmc samples
+# source(file = paste0(home,"/models_eel/model_eel_silvering.R"))
+# Sys.time() - t # approx 1.5 hours with 6000 hmc samples
 
 ```
 
@@ -154,7 +153,6 @@ gelman.diag()
 pl$psrf[which(pl$psrf[, 1] > 1.01),]
 silv.samples[, node.sub[sample(1:length(node.sub), 50)], drop = FALSE] %>%
 mcmc_trace()
-
 pl <- silv.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()
 print("effective sample size")
@@ -183,6 +181,7 @@ silv.samples[, node.sub[sample(1:length(node.sub), 36)], drop = FALSE] %>%
 mcmc_trace()
 pl <- silv.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag(multivariate = FALSE) # Error in chol.default(W) : the leading minor of order 1 is not positive
+round(pl$psrf[which(!is.na(pl$psrf[, 1])),][,1],3)
 pl <- silv.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()
 print("effective sample size")
@@ -228,15 +227,11 @@ silv.samples[[1]] %>%
   labs(title = "bs")
 
 silv.samples[[1]] %>%
-  gather_draws(s.sig,bt) %>%
+  gather_draws(s.sigma,bt) %>%
   ggplot() +
   geom_density(aes(x = .value, color = .variable)) +
   facet_wrap(~.variable, scales = "free") +
   theme_minimal() 
-
-data.silv %>%
-  filter(ecoreg == "medwest") %>%
-  summarise(m = mean(temp.sc))
 
 ```
 
@@ -250,7 +245,7 @@ var.lats <- data.silv %>%
   arrange(-m.lat)
 
 dfp <- silv.samples[[1]] %>%
-  spread_draws(s.mu[i]) %>%
+  spread_draws(s.mu[ind.id]) %>%
   median_qi() %>%
   rename(pred.sl = s.mu) %>%
   ungroup() %>%
@@ -260,8 +255,7 @@ dfp <- silv.samples[[1]] %>%
               mutate(ind.id = row_number(),
                      sex = if_else(sex == 0, "female", "male"))) %>%
   left_join(var.lats) %>%
-  mutate(ecoreg = fct_reorder(as.factor(ecoreg), -m.lat),
-         m_pred = median(pred.sl), .by = c(year,sex))
+  mutate(ecoreg = fct_reorder(as.factor(ecoreg), -m.lat))
 
 dfp %>%
   slice_sample(n = 5000) %>%
@@ -294,6 +288,7 @@ n.labs <- data.silv %>%
   mutate(sex = if_else(sex==1, "female", "male"))
 
 dfp %>% summarise(mexp = exp(median(pred.sl)), .by= sex)
+dfp %>% ungroup() %>% summarise(exp(median(pred.sl)), .by= sex)
 
 dfp %>%
   ggplot() +
@@ -347,13 +342,13 @@ data.silv %>%
   filter(ecoreg == "nseasouth") %>%
   summarise(ml = mean(length), .by = c(fi_year)) %>% arrange(fi_year)
 
-dfp %>%
-  mutate(length_mc = length - mean(length), .by = c(sex)) %>%
-  ggplot() +
-  geom_line(aes(y = length_mc, x = year, color = ecoreg)) +
-  facet_wrap(~sex, scales = "free_y") +
-  theme_minimal() +
-  labs(x = "year", caption = "centered by mean by sex")
+# dfp %>%
+#   mutate(length_mc = length - mean(length), .by = c(sex)) %>%
+#   ggplot() +
+#   geom_line(aes(y = length_mc, x = year, color = ecoreg)) +
+#   facet_wrap(~sex, scales = "free_y") +
+#   theme_minimal() +
+#   labs(x = "year", caption = "centered by mean by sex")
 # ggsave(paste0(home, "/report/silv_lcomp.png"), width = 17, height = 14, units = "cm")
 ```
 
@@ -364,14 +359,16 @@ samp <- silv.samples[[1]]
 
 cols <- grep("^R",colnames(as.matrix(samp)))
 
-corr_arr <- array(NA, dim = c(9, 9, nrow(samp)))
+ner <- length(unique(data.silv$ecoreg))
+
+corr_arr <- array(NA, dim = c(ner, ner, nrow(samp)))
 
 for (i in 1:nrow(samp)) {
 
   R_sample <- matrix(
     as.numeric(samp[i, cols]),
-    nrow = 9,
-    ncol = 9,
+    nrow = ner,
+    ncol = ner,
     byrow = FALSE
   )
 
@@ -397,6 +394,7 @@ as.data.frame(corr) %>%
   scale_fill_viridis_c() +
   scale_x_discrete(labels = er.labs) +
   scale_y_discrete(labels = er.labs) +
-  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75)))
-
+  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
+  labs(x = "", y = "")
+ggsave(paste0(home, "/report/silv_cor.png"), width = 17, height = 14, units = "cm")  
 ```

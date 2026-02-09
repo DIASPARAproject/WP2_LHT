@@ -130,7 +130,6 @@ const <- list(A1 = min(data.schnu$age),
 # initial values generating function
 inits <- function(){
   list(l.sig = rexp(1,5),
-       Ustar  = diag(const$npar),
        mu.par = c(rlnorm(const$ner,log(100), sd = 0.1),
                   rlnorm(const$ner,0,sd = 0.1),
                   rlnorm(const$ner,log(850),sd = 50),

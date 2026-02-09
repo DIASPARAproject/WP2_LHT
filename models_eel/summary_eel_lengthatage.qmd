@@ -52,8 +52,9 @@ home <- here::here()
 #| cache: false
 
 ## Read data
-df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_3.RData") %>%
-  st_drop_geometry()
+df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_4.RData") %>%
+  st_drop_geometry() %>%
+  mutate(ecoreg = str_remove(ecoreg, "/h$"))
 
 ```
 
@@ -73,7 +74,6 @@ data.schnu <- df.eel %>%
          er = as.integer(factor(ecoreg)),
          hab = as.integer(factor(ser_hty_code)),
          temp.sc = (tmp_dc_uyr - mean(tmp_dc_uyr))/sd(tmp_dc_uyr)) 
-
 ```
 
 ### Plot length at age data
@@ -133,7 +133,7 @@ data.schnu %>%
 
 ```{r}
 # Load samples 
-schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-01-23.RData"))$samples
+schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-07.RData"))$samples #v.11
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
@@ -143,9 +143,6 @@ schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-0
 
 ### Traces and ‘potential scale reduction factor’
 
-The variables in the Schnute model are:
-"ps","l.sig","Ustar","U","hK","mu.par","sig.par","btL","btK","sex","bsL","bsK","par","l.mu"), 
-
 ```{r}
 ## par ( a sample of the par traces)
 node.sub <- grep("^par\\[", colnames(schnu.samples[[1]]), value = TRUE)
@@ -154,7 +151,7 @@ mcmc_trace()
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
 # which psrf are > 1.01 
-pl$psrf[which(pl$psrf[, 1] > 1.01),]
+pl$psrf[which(pl$psrf[, 1] > 1.1),]
 # check traces of those psrf that are > 1.01
 schnu.samples[,node.sub[which(pl$psrf[, 1] > 1.01)]] %>%
 #schnu.samples[, node.sub[sample(1:length(node.sub), 16)], drop = FALSE] %>%
@@ -179,7 +176,7 @@ mcmc_trace()
 # EES of par 
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()
-pl[which(pl < 1000)]
+pl[which(pl < 500)]
 
 ## mu.par
 node.sub <- grep("^mu.par", colnames(schnu.samples[[1]]), value = TRUE)
