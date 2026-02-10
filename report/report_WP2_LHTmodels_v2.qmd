@@ -316,12 +316,6 @@ Female length at silvering (conditional predictions for mean observed temperatur
 Correlation matrix $R$ describing correlations between length at silvering coefficient $\alpha_j$ for spatial units (ordered by latitude).
 :::
 
-::: {#fig-silv_cor}
-![](silv_cor.png)
-
-Correlation matrix $R$ describing correlations between length at silvering coefficient $\alpha_j$ for spatial units (ordered by latitude).
-:::
-
 ## Salmon
 
 ### Spatiotemporal variation in salmon length at age
