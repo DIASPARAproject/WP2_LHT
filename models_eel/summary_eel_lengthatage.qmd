@@ -236,8 +236,6 @@ pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
 pl$psrf[which(pl$psrf[, 1] > 1.01),]
 
-pl <- schnu.samples[, , drop = FALSE] %>%
-gelman.diag(multivariate = FALSE)
 
 ```
 
