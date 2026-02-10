@@ -229,9 +229,15 @@ silv.samples[[1]] %>%
 silv.samples[[1]] %>%
   gather_draws(s.sigma,bt) %>%
   ggplot() +
-  geom_density(aes(x = .value, color = .variable)) +
+  geom_boxplot(aes(x = .value, color = .variable)) +
   facet_wrap(~.variable, scales = "free") +
   theme_minimal() 
+
+# effect of Temp in % chaneg in length by degree Celcius
+silv.samples[[1]] %>%
+  gather_draws(bt) %>%
+  median_qi() %>%
+  mutate(eff = exp(.value / sd(data.silv$tmp_dc_uyr/10))) # Note that tmp_dc_uyr is in Celcius*10
 
 ```
 

@@ -133,7 +133,7 @@ data.schnu %>%
 
 ```{r}
 # Load samples 
-schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-07.RData"))$samples #v.11
+schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-10.RData"))$samples #v.11
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
@@ -185,7 +185,7 @@ mcmc_trace()
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
 # no mu.par psrf > 1.01
-pl$psrf[which(pl$psrf[, 1] > 1.01),]
+pl$psrf[which(pl$psrf[, 1] > 1.1),]
 # all ess are good
 schnu.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()
@@ -203,6 +203,10 @@ effectiveSize()
 node.sub <- grep("^R\\[", colnames(schnu.samples[[1]]), value = TRUE)
 schnu.samples[, node.sub[sample(1:length(node.sub), 48)], drop = FALSE] %>%
 mcmc_trace()
+pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+gelman.diag(multivariate = FALSE)
+pl <-round(pl$psrf[which(!is.na(pl$psrf[, 1])),][,1],3)
+pl[which(pl > 1.1)]
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()
 pl[which(pl < 1000 & pl > 0)]
@@ -231,6 +235,9 @@ mcmc_trace()
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
 pl$psrf[which(pl$psrf[, 1] > 1.01),]
+
+pl <- schnu.samples[, , drop = FALSE] %>%
+gelman.diag(multivariate = FALSE)
 
 ```
 

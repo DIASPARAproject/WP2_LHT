@@ -124,6 +124,6 @@ eelsilv.mcmc <- buildMCMC(eelsilv.confmcmc, project = eelsilv.model)
 # compile mcmc
 eelsilv.mcmcc <- compileNimble(eelsilv.mcmc, project = eelsilv.model)
 
-eelsilv.samples <- runMCMC(eelsilv.mcmcc, niter = 6000, nburnin = 3000, nchains = 2, thin = 2, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
+eelsilv.samples <- runMCMC(eelsilv.mcmcc, niter = 10000, nburnin = 7000, nchains = 2, thin = 2, WAIC=TRUE, samplesAsCodaMCMC = TRUE)
 
 saveRDS(eelsilv.samples, file = paste0(home,"/models_eel/samples/eelsilv.samples_",Sys.Date(),".RData"))
