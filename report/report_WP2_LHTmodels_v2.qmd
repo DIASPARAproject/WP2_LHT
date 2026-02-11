@@ -58,15 +58,20 @@ The analyses of LHTs of Atlantic salmon prioritize analysing:
 
 This choice is based on priority in recent work by ICES WGNAS and ICES WGBAST to improve estimates of abundance of spawners and their reproductive output to estimate recruitment and stock productivity. The analyses have been revised to suit data availability.
 
-To facilitate comparisons of LHT estimates, and analyses of links between different LHTs, we build models based on biological and ecological principles where possible, such as Pütter type growth models for length at age [@klemen2003;@quince2005;@schnute1981]. Furthermore, we use e use hierarchical Bayesian models for building LHT models to capture variation at different spatial scales [@Stuber2020]. This approach also provides flexibility in tailoring process models, incorporating prior information and sharing information across spatiotemporal scales to improve estimates in data poor regions. 
+To facilitate comparisons of LHT estimates, and analyses of links between different LHTs, we build models based on biological and ecological principles where possible, such as Pütter type growth models for length at age [@klemen2003;@quince2005;@schnute1981]. Furthermore, we use hierarchical Bayesian models for building LHT models to capture variation at different spatial scales [@Stuber2020]. This approach also provides flexibility in tailoring process models, incorporating prior information and sharing information across spatiotemporal scales to improve estimates in data poor regions. 
+
+{Becky<<text below of def of spatial units could maybe go into methods?>>}
 
 For purposes of analysis, spatial units were defined based on relevant scales for species-specific ecological, genetic and environmental processes and management areas. However, their scale is also conditioned on data availability. For salmon, the spatial units  correspond to assessment units (AU) for the Baltic Sea in which five out of six AU:s are represented in the data (AU 1-5) as well as a unit for Baltic salmon with unknown assessment unit (AU NA). For North Atlantic salmon, we used either the stock units from ICES' assessment model (Sweden) or finer scale groupings: based on genetic analyses (France) [@perrier2011] or coastal areas (Ireland). For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and ecoregions as described in the DIASPARA WP3 habitat database (ICES ecoregions split using relevant catchment groupings). River basins are nested within ecoregion based on the location of a river basin's marine outlet.
 
 ## Eel
 
+We chose spatial units were defined based on relevant scales from an ecological and management perspective. For eel, we used river basins (n=122 represented in the data) from the HydroSHEDS database [@lehner2008] and ecoregions as described in the DIASPARA WP3 habitat database (ICES ecoregions split using relevant catchment groupings). River basins are nested within ecoregion based on the location of a river basin's marine outlet.
+
 ### Spatial variation in yellow eel length at age
 
-To assess spatial variation in individual body length as a function of age, we used the Schnute growth function [@schnute1981]. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. This is suitable for eel as it displays large variation in length at age between the sexes and throughout its distribution area. In the model we estimate the parameters of the function at nested spatial scales (at river basins nested within ecoregions) i.e. assuming growth parameters vary among river basins, but that parameters from river basins within a same ecoregion display similarities.
+To assess spatial variation in individual body length as a function of age, we used the Schnute growth function [@schnute1981]. This is based on the principle of growth acceleration and is an umbrella formulation of common growth functions (e.g. the von Bertalanffy and Gompertz growth functions) allowing flexibility in growth curvature. The Schnute modelis suitable for eel, which it displays large variation in length at age between the sexes and throughout its distribution area. In the model we estimate the parameters of the function at nested spatial scales (at river basins nested within ecoregions) i.e. assuming growth parameters vary among river basins, but that parameters from river basins within a same ecoregion display similarities.
+
 
 #### Data
 
@@ -76,7 +81,7 @@ Region specific temperature information from the HydroSHEDS database [@lehner200
 
 #### Model description
 
-We modeled yellow eel age dependent length (growth) trajectories using the Schnute growth equation [@schnute1981]. We let the parameters of the growth equation vary by sex, environmental temperature, habitat type and river basin. River basins $(j = 1,\dots,n_{j})$ are nested within ecoregions $(r = 1,\dots,n_{r})$ (hereafter regions). We let the parameters of the growth equation vary by sex, environmental temperature, habitat type and river basin. River basins $(j = 1,\dots,n_{j})$ are nested within ecoregions $(r = 1,\dots,n_{r})$ (hereafter regions).
+Parameters of the Schnute [@schnute1981] growth equation were allowed to vary by sex, environmental temperature, habitat type and river basin.River basins $(j = 1,\dots,n_{j})$ are nested within ecoregions $(r = 1,\dots,n_{r})$ (hereafter regions).
 
 Observed length $L_i$ of individual $i$ is modeled using a normal likelihood:
 
@@ -86,7 +91,7 @@ where the expected length $\mu_i$ is defined by the Schnute growth function (ass
 
 $\mu_{L_i} = \Bigg(L1_i^{P_i} + (L2_i^{P_i} - L1_i^{P_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/P_i}$ 
 
-where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ the estimated lengths at $A1$ and $A2$, $p$ a shape parameter controlling curvature and $k$ is the growth coefficient.
+where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ are estimated lengths at $A1$ and $A2$, $p$ is a shape parameter controlling curvature and $k$ is the growth coefficient.
 
 All four Schnute parameters are estimated with a river basin level intercept and with additive covariate effects of temperature $b_t$ (for $L2$ and $k_i$), sex $b_s$ ($L2$ and $k_i$) and habitat $b_h$ (for $k_i$): 
 
@@ -134,7 +139,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 #### Results & Discussion
 
-Calculated Gelman-Rubin statistics for parameter estimates was below $1.1$ for more than $99,9$% of the parameters. The $P$ Schnute-parameter and for the Adriatic Sea region was over represented in the parameters with poor convergence. We used two chains with 1500 samples in each for convergence diagnostics (see model scripts and summary for details on model formulation and diagnostics).
+Calculated Gelman-Rubin statistics for parameter estimates was below $1.1$ for more than $99,9$% of the parameters. The $P$ Schnute-parameter and for the Adriatic Sea region was over represented in the parameters with poor convergence. We used two chains with 1500 samples in each for convergence diagnostics (see Supplementary material model scripts and summaries for details on model formulation and diagnostics).
 
 The global median of the parameters $L_1$ and $L_2$ of our yellow eel Schnute mechanistic growth model are $L_1 = 250, L_2 = 691$. These parameters are the estimated length at age 0 (the minimum observed age in the data) and at age 39 (the maximum observed age in the data) respectively. The biological realism of these global estimates should be considered carefully as they represent extreme observed ages (age 0 observations are uncommon and age 39 extremely rare) and there are much smaller and larger individuals than estimated in the data. The estimates therefore mainly guide the predictions for common ages and sizes. Further analysis with this model could assess the effect of the choice of reference ages for the Schnute function on model quality and spatial estimates. Importantly, the global estimate is not representative for a species showing large variation in growth rates across river basins and regions.
 
@@ -276,11 +281,11 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 #### Results & Discussion
 
-Calculated Gelman-Rubin statistics for all parameter estimates was below $1.1$. We used two chains with 1500 samples in each for convergence diagnostics (see model scripts and summary for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
+Calculated Gelman-Rubin statistics for all parameter estimates was below $1.03$. We used two chains with 1500 samples in each for convergence diagnostics (see Supplementary material model scripts and summaries for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
 
 We estimated the median of the posterior of expected outcomes for length at silvering to 679 mm for females and 377 mm for males (the median parameter estimate for $\mu_{\alpha,j}$ is $582$). There is however large spatial variation with the smallest silvers eels in the Celtic sea (females) and the North Sea UK (males) and the largest silver eels in the Baltic ICES SD 27 to 29 (both sexes, [@fig-silv_ERl]). The spatial correlations of mean silvering length $\boldsymbol{\alpha}$ (i.e. excluding covariate effects) is shown in @fig-silv_cor. Furthermore, the posterior distributions are heterogeneous across ecoregions suggesting that they are relevant for explaining differences in silvering length. The uncertainty of regional estimates vary however and further analysis could assess whether this is driven by variation in length, model structure or lack of data. Here, a model with river basins nested within region (as in the length at age model) might explain some of that variation.
 
-For females, there is a tendency for an increase in length with latitude ([@fig-silv_ERl]) as previously shown by @vollestad1992. Furthermore, our estimated median temperature effect ($b_T = -0.15)$) corresponding to a $5$% decrease in length per degree Celcius in our model. Temperature may therefore likely explain part of the latitudinal variation in the length at silvering in @fig-silv_ERl. Plotting temperature (retrieved by river basin from Hydrosheds) against length in the data suggest that temperature effects may be sex specific (see silvering model output summary) and this could be evaluated in future model development. Here, an analyses based on spatiotemporal rather than spatial temperature data, would probably better describe temperature and climate related effects on length at silvering.
+For females, there is a tendency for an increase in length with latitude ([@fig-silv_ERl]) as previously shown by @vollestad1992. Furthermore, our estimated median temperature effect ($b_T = -0.15)$) corresponding to a $5$% decrease in length per degree Celcius in our model. Temperature may therefore likely explain part of the latitudinal variation in the length at silvering in @fig-silv_ERl. Plotting temperature (retrieved by river basin from Hydrosheds) against length in the data suggest that temperature effects may be sex specific (see Supplementary material model output summary) and this could be evaluated in future model development. Here, an analyses based on spatiotemporal rather than spatial temperature data, would probably better describe temperature and climate related effects on length at silvering.
 
 Our model suggest overall strong but variable temporal trends across ecoregions ([@fig-siltm, @fig-siltf]) with periods of both increases and decreases in length at silvering. However, the overall median trend for females suggest a peak in 2010 followed by a slight decline ([@fig-siltf]). For males, the median trend is instead an increase since 2005 but with recent declines [@fig-siltm]. Since we estimate a covariate effect of sex by region but not over time, the two sexes share the same regional time trend but differ by a constant regional offset. Here, there is a negative trend of length of eels in most regions over past 5 to 10 years but not in the North Sea UK and Celtic Sea ([@fig-siltm, @fig-siltf]). Note that in [@fig-siltm] and [@fig-siltf] and for many regions (e.g. the adriatic and the Baltic), years prior to 2010 have large uncertainties. This is due to lack of data and the point estimate correspond to the regional median (in [@fig-silv_ERl]). Some drastic changes in eel length appear in the estimates and details on why needs further analyses. For example, a very high estimate in 2025 in the Celtic Sea is probably due to unusually large eel in the data for that time series while the cause for the sudden increase for that year for the North Sea south is not as evident from the data.
 
@@ -317,6 +322,8 @@ Correlation matrix $R$ describing correlations between length at silvering coeff
 :::
 
 ## Salmon
+
+The spatial units for salmon were defined based on relevant scales for ecological, genetic and environmental processes and management areas but conditioned on data availability. For salmon, the spatial units  correspond to assessment units (AU) for the Baltic Sea in which five out of six AU:s are represented in the data (AU 1-5) as well as a unit for Baltic salmon with unknown assessment unit (AU NA). For North Atlantic salmon, we used either the stock units from ICES' assessment model (Sweden) or finer scale groupings: based on genetic analyses (France) [@perrier2011] or coastal areas (Ireland). 
 
 ### Spatiotemporal variation in salmon length at age
 
@@ -402,7 +409,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 #### Results & Discussion
 
-Calculated Gelman-Rubin statistics for all parameter estimates was well below $1.1$. We used two chains with 1500 samples in each for convergence diagnostics (see model scripts and summary for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
+Calculated Gelman-Rubin statistics for all parameter estimates was well below $1.1$. We used two chains with 1500 samples in each for convergence diagnostics (see Supplementary material model scripts and summaries for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
 
 For the marine phase of our biphasic model of salmon length at age, the estimated global marginal parameter value for the growth coefficient $k$ is $0.47$ and length at infinity $L_\infty$ is $1042$. The lowest estimate of $k$ and highest of $L_\infty$ are found in the Baltic Sea AU2, the opposite (lowest $L_\infty$ and highest $k$) are found on the Irish west coast ([@fig-salaa_k], [@fig-salaa_linf]). However, the estimates of $k$ on the Irish west coast are extremely high and $L_\infty$ is likely too low ([@fig-salaa_k], [@fig-salaa_linf]). Conversely, $L_\infty$ for the Baltic Sea AU2 is extremely high, particularly for males ([@fig-salaa_linf]). Possible causes for the poor estimates in Ireland are that there are few observations, little age dependent length variation and no old individuals in the data (mostly 1 and few 2 sea winters) causing issues in estimating von Bertalanffy parameters which are correlated [@pill2002]. In case of the Baltic Sea AU2, there is many observations across ages and the accuracy of predicted values compared to observed are comparable to other regions ([@fig-salaa_poa]). Possibly, observations here generate a relatively linear growth rate and does not cover the asymptotic growth phase. These issues could likely be resolved with a prior constraining variation of $L_\infty$.
 
@@ -516,7 +523,7 @@ where $a_j$ and $b_j$ is intercept (fecundity at mean length on the log scale) a
 
 To share information across spatial units, intercepts ($a_j$) and slopes ($b_j$) were given hierarchical priors with hyperparameters specified for the group-level means ($\mu_a, \mu_b$) and standard deviations ($\sigma_b, \sigma_a$) (@tbl-fecundity). Weakly informative priors were used for all parameters in the model (See table @tbl-fecundity for prior specifications).
 
-The model was implemented in NIMBLE, and posterior distributions of model parameters was estimated using Hamiltonian Monte Carlo sampling. Convergence was assessed by checking trace plots and Gelman–Rubin diagnostics [@gelman1992] (see model scripts and summary for details on model formulation and diagnostics).
+The model was implemented in NIMBLE, and posterior distributions of model parameters was estimated using Hamiltonian Monte Carlo sampling. Convergence was assessed by checking trace plots and Gelman–Rubin diagnostics [@gelman1992] (see Supplementary material model scripts and summaries for details on model formulation and diagnostics).
 
 ::: {#tbl-fecundity}
 | Parameter | Description | Prior distribution |
@@ -535,7 +542,7 @@ The model was implemented in NIMBLE, and posterior distributions of model parame
 
 #### Results & Discussion
 
-Calculated Gelman-Rubin statistics for all parameter estimates was below $1.01$. We used three chains with 2000 samples in each for convergence diagnostics (see model scripts and summary for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
+Calculated Gelman-Rubin statistics for all parameter estimates was below $1.01$. We used three chains with 2000 samples in each for convergence diagnostics (see Supplementary material model scripts and summaries for details on model formulation and diagnostics) and confirm that the MCMC chains had converged to a stationary distribution.
 
 We estimated the posterior medians of the regression coefficients on the log-scale to $a = 8.90$ and $b = 2.52$ corresponding to $\log(n.eggs)$ for a salmon of mean length in our data (803 mm) and scaling with length by an exponent of $2.52$. There is considerable variation in the parameters between spatial units and the highest and lowest $a$ is found in the Baltic sea AU3 and Ireland west respectively and highest and lowest $b$ is found in lower Normandy and the Baltic sea AU3 ([@fig-fec_ab]). The spatial variation suggest there is more variation in intercept than in slope reflecting larger variation in absolute fecundity than in change in length. Furthermore, salmon from the Baltic Sea have consistently higher $a$ and lower $b$ than salmon from the Atlantic ([@fig-fec_ab], [@fig-fec_ab]). For resulting fecundity at length on the log and natural scale, see @fig-fec_lc and @fig-fec_nc.
 
@@ -582,6 +589,10 @@ The LHT models presented here are based on data identified within the project (D
 To improve spatiotemporal estimates of salmon and eel life history traits we have highlighted data needs. Specifically we recommend data collection of 1) aged and sexed yellow eel to facilitate future spatiotemporal analyses of growth, 2) aged salmon juveniles to increase the spatiotemporal scope of the models, 3) salmon fecundity estimates based on common methodology to facilitate better estimate of spatial variation in fecundity. Ideally, an observation should contain length, weight, age, sex, coordinates and life stage of the individual fish. Overall, reoccurring and spatially explicit data collection on these variables will generally and largely  improve the possibilities of describing spatiotemporal variation in LHT of both salmon and eel.
 
 A pitfall of using data collected on large spatiotemporal scales is variation in sampling methodology. Sampling of fish takes place both in fisheries, monitoring and in scientific surveys and by using different gear or at different time of the year. While such differences are particularly an issue when estimating abundance, estimates based on age and length may be sensitive as well resulting in bias in a spatiotemporal analysis. For example, eel catch methods are often size biased favoring larger sizes generating relatively higher catches of large males and of females. Males are more abundant in southern regions and fisheries, from which some fish are sampled, may target different sizes in different regions. Consequently, we may overestimate size at age in younger ages of males. We have in this analyses assumed that our data is independent of sampling methodology opening for further improvement of th models. Solution?
+
+## Supplementary material
+
+All model code and detailed summaries of model output are available at [https://github.com/DIASPARAproject/WP2_LHT/tree/main].
 
 ## References
 
