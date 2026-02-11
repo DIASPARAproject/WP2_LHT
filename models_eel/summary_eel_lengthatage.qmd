@@ -133,7 +133,7 @@ data.schnu %>%
 
 ```{r}
 # Load samples 
-schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-10.RData"))$samples #v.11
+schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-11.RData"))$samples #v.11
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
@@ -232,10 +232,8 @@ effectiveSize()
 node.sub <- grep("^hK", colnames(schnu.samples$chain1), value = TRUE)
 schnu.samples[, node.sub[], drop = FALSE] %>%
 mcmc_trace()
-pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
+schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
-pl$psrf[which(pl$psrf[, 1] > 1.01),]
-
 
 ```
 
