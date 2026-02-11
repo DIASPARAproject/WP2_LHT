@@ -37,7 +37,7 @@ if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
 
 invisible(lapply(pkgs, library, character.only = T))
 
-devtools::source_url("https://raw.githubusercontent.com/VThunell/diasp-lht/main/R/functions/map-plot.R") # message of SHA-1 hash for file
+devtools::source_url("https://raw.githubusercontent.com/VThunell/diasp-lht/main/R/functions/map-plot.R")
 options(ggplot2.continuous.colour = "viridis")
 theme_set(theme_minimal()) 
 
@@ -56,6 +56,7 @@ home <- here::here()
 df.eel <- readRDS(file = "~/gitProjects/2024_R_DIASPARA/data/indhdb_4.RData") %>%
   st_drop_geometry() %>%
   mutate(ecoreg = str_remove(ecoreg, "/h$"))
+
 ```
 
 ## Length at Silvering
@@ -76,6 +77,7 @@ data.silv <- dfp %>%
          year = as.integer(factor(fi_year, levels = sort(unique(fi_year)), labels = seq_along(sort(unique(fi_year))))),
          temp.sc = (dfp$tmp_dc_uyr - mean(dfp$tmp_dc_uyr))/sd(dfp$tmp_dc_uyr),
          age.sc = (dfp$ageyear - mean(dfp$ageyear))/sd(dfp$ageyear)) 
+
 rm(dfp)
 ```
 
@@ -120,14 +122,14 @@ data.silv %>%
 ### Source models / Load samples
 ```{r, cache = FALSE}
 # Load samples
-# readRDS(paste0(home,"/data/silv.samples_1214.RData"))$WAIC
-# readRDS(paste0(home,"/data/silv.samples_1216.RData"))$WAIC
-silv.samples <- readRDS(paste0(home,"/models_eel/samples/eelsilv.samples_2026-02-09.RData"))$samples # v9
+# readRDS(paste0(home,"/models_eel/samples/eelsilv.samples_2026-02-09.RData"))$WAIC
+# readRDS(paste0(home,"/models_eel/samples/eelsilv.samples_2026-02-11.RData"))$WAIC
+silv.samples <- readRDS(paste0(home,"/models_eel/samples/eelsilv.samples_2026-02-11.RData"))$samples # v9
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
 # source(file = paste0(home,"/models_eel/model_eel_silvering.R"))
-# Sys.time() - t # approx 1.5 hours with 6000 hmc samples
+# Sys.time() - t # approx 4.5 hours with 10000 hmc samples
 
 ```
 
@@ -233,7 +235,7 @@ silv.samples[[1]] %>%
   facet_wrap(~.variable, scales = "free") +
   theme_minimal() 
 
-# effect of Temp in % chaneg in length by degree Celcius
+# effect of Temp in % change in length by degree Celcius
 silv.samples[[1]] %>%
   gather_draws(bt) %>%
   median_qi() %>%
@@ -344,18 +346,6 @@ dfp %>%
   labs(x = "year")
 ggsave(paste0(home, "/report/silv_lm.png"), width = 17, height = 14, units = "cm")  
 
-data.silv %>%
-  filter(ecoreg == "nseasouth") %>%
-  summarise(ml = mean(length), .by = c(fi_year)) %>% arrange(fi_year)
-
-# dfp %>%
-#   mutate(length_mc = length - mean(length), .by = c(sex)) %>%
-#   ggplot() +
-#   geom_line(aes(y = length_mc, x = year, color = ecoreg)) +
-#   facet_wrap(~sex, scales = "free_y") +
-#   theme_minimal() +
-#   labs(x = "year", caption = "centered by mean by sex")
-# ggsave(paste0(home, "/report/silv_lcomp.png"), width = 17, height = 14, units = "cm")
 ```
 
 ### Correlation/covariance matrix
