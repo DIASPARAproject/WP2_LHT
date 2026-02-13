@@ -294,29 +294,6 @@ dfp %>%
   labs(title = "P", caption = "black box is region specific posterior", x = "P") 
 ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 17, units = "cm")
 
-# dfp %>%
-#   filter(par == "K") %>%
-#   ggplot() +
-#   geom_boxplot(aes(x = val, group = main_bas), color = "grey", outliers = FALSE) +
-#   geom_boxplot(aes(x = val), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) +
-#   facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-#   theme(axis.text.y = element_blank())
-```
-
-```{r}
-dfp <- schnu.samples %>%
-  gather_draws(bpar[main_bas,pars], sep = ",") %>%
-  mutate(par = case_when(pars == 1 ~ "L1",
-                         pars == 2 ~ "P",
-                         pars == 3 ~ "L2",
-                         pars == 4 ~ "K"),
-         val = case_when(!pars == 2 ~ exp(.value),
-                         .default = .value)) %>%
-  ungroup() %>%
-  left_join(data.schnu %>% distinct(ecoreg, main_bas)) %>%
-  left_join(var.lats) %>%
-  mutate(ecoreg = fct_reorder(ecoreg, -m.lat)) 
-
 cor_draws <- schnu.samples %>%
   spread_draws(bpar[mb, p], sep = ",") %>%
   pivot_wider(names_from = p, values_from = bpar, names_prefix = "par") %>%
@@ -334,9 +311,6 @@ cor_draws %>%
   geom_histogram(fill = "grey") +
   geom_vline(xintercept = mean(cor_draws$corr_P_k), color = "darkgrey", linetype = "dashed") +
   facet_wrap(~pars)
-  # labs(#x = "Correlation between L2 and K across basins",
-  #      #y = "Posterior frequency",
-  #      title = "Spatial correlation P and K")
 ```
 
 #### Covariates
