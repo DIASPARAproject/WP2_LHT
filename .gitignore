@@ -17,3 +17,5 @@
 report/*
 !report/*LHTmodels_v3.html
 !report/*LHTmodels_v3.qmd
+
+*samples

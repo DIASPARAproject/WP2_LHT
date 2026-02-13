@@ -239,6 +239,17 @@ dfj %>%
   labs(caption = "Juvenile length at age" )
 ggsave(paste0(home, "/report/salaa_poj.png"), width = 17, height = 14, units = "cm")
 
+# jrmse <- laa.samples %>% # rmse = sd of residuals
+#   spread_draws(l.mu.j[i], sep = ",") %>%
+#   rename(pred.l = l.mu.j,
+#          ind.id = i) %>%
+#   left_join(data.j %>%
+#               select(length_mm_j,spat.unit) %>%
+#               rename(obs.l = length_mm_j) %>%
+#               mutate(ind.id = row_number()), by = "ind.id") %>%
+#   group_by(.draw) %>%
+#   summarise(rmse = sqrt(mean((obs.l - pred.l)^2)))
+
 # Sea age predictions
 dfl <- data.b %>%
   select(length_mm,spat.unit,smo.age,hatch.year.f,sex,g.year,su) %>%
@@ -265,6 +276,7 @@ dfl %>%
 ggsave(paste0(home, "/report/salaa_poa.png"), width = 17, height = 14, units = "cm")
 
 rm(dfj,dfl)
+
 ```
 
 ### Length at age variables

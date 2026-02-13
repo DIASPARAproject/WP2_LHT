@@ -1,0 +1,588 @@
+---
+title: "Salmon spatiotemporal fecundity estimates "
+subtitle: "DIASPARA WP 2.2"
+author: "Viktor Thunell" 
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: full
+    embed-resources: true
+    toc: true
+knitr: 
+  opts_chunk:
+    fig.align: center
+    out-width: 80%
+editor: source
+execute: 
+  echo: true
+  eval: true
+  cache: true
+---
+
+## Introduction 
+- Combine spatial FAL with spatiotemporal LAA to construct spatiotemporal FAL
+- Propagate the uncertainty in fecundity parameters $a$ and $b$ to estimates of fecundity over time
+  * Create samples of individual fecundity estimates
+    * from sampling the distributions of the allometric parameters $a$ and $b$
+    * and using estimates of $l_{\mu}$ in $a_{s_i}l_{\mu}^{b_{s_i}}$
+    * (used deterministic $l_{\mu}$ estimates for convenience)
+
+## Load libraries
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+
+# Load libraries, install if needed
+pkgs <- c("tidyverse", "tidylog", "devtools","viridis","nls.multstart", "broom", "patchwork", "coda", "boot", "tidybayes","bayesplot", "nimble", "here", "purrr")
+
+# remotes::install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
+
+if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
+    install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
+  }
+
+invisible(lapply(pkgs, library, character.only = T))
+
+options(ggplot2.continuous.colour = "viridis")
+theme_set(theme_minimal())
+
+# Set path
+color_scheme_set("viridis")
+home <- here::here()
+```
+
+
+```{r}
+## l.mu and Fecundity over time
+
+### l.mu
+
+```{r}
+# Function for calculating l.mu
+calc_l_mu <- nimbleFunction(
+  run = function(
+    lb_mu = double(1), 
+    g = double(2), 
+    log_p_year = double(2),
+    su = double(1),
+    age = double(1),
+    smo_age = double(1),
+    hatch_year_f = double(1),
+    growth_year = double(1),
+    doy_dec = double(1),
+    max_age = double(0)
+  ) {
+    returnType(double(2))
+    
+    nind <- length(su)
+    nyears <- dim(g)[1]
+    nsu <- dim(g)[2]
+    
+    # initialize output with sentinel (-999)
+    l_mu <- matrix(-999, nrow = max_age + 1, ncol = nind)
+    
+    for (i in 1:nind) {
+      su_i <- su[i]
+      hyf_i <- hatch_year_f[i]
+      ag_i <- age[i]
+      smo_i <- smo_age[i]
+      gy_i <- growth_year[i]
+      doy_i <- doy_dec[i]
+      
+      # initial 0+ prediction
+      l_prev <- lb_mu[su_i] +
+        (1.0 - step(1.0 - (ag_i + 0.001))) *
+        (exp(g[hyf_i, su_i]) + step(1.0 - (ag_i + 0.001)) * exp(g[hyf_i, su_i]) * doy_i)
+      
+      l_mu[1, i] <- l_prev
+      
+      if (gy_i >= 1) {
+        for (a in 2:(gy_i + 1)) {
+          year_idx <- hyf_i + (a - 1)
+          outside <- step(1.0 - year_idx) + step(year_idx - nyears)
+          
+          if (outside == 0.0) {
+            pre_smolt <- step(smo_i - (a - 0.999))
+            post_smolt <- 1.0 - pre_smolt
+            before_age <- 1.0 - step((a - 1) - (ag_i + 0.001))
+            
+            g_exp <- exp(g[year_idx, su_i])
+            linf_exp <- exp(log_p_year[year_idx, su_i])
+            k_exp <- exp(log_p_year[year_idx, nsu + su_i])
+            
+            delta_len <- before_age * (
+              pre_smolt * g_exp +
+                post_smolt * ((linf_exp - l_prev) * (1.0 - exp(-k_exp)))
+            ) +
+              (1.0 - before_age) * (
+                pre_smolt * g_exp * doy_i +
+                  post_smolt * ((linf_exp - l_prev) * (1.0 - exp(-k_exp * doy_i)))
+              )
+            
+            l_new <- l_prev + delta_len
+            l_prev <- l_new
+            l_mu[a, i] <- l_new
+          } else {
+            l_mu[a, i] <- l_prev
+          }
+        } # end loop a
+      } # end if gy_i >= 1
+    } # end loop i
+    
+    return(l_mu)
+  }
+)
+
+recompute_lmu <- function(samples, consts, calc_l_mu_c, n_draws) {
+  message("Preparing to recompute l.mu from posterior samples...")
+
+  nyear <- consts$nyear
+  nsu   <- consts$nsu
+  nobs  <- length(consts$su)
+  max_age <- max(consts$growth.year, na.rm = TRUE)
+
+  # extract parameter arrays
+  lb_mu_samps <- extract_node_samples(samples, "^lb.mu\\[", c(nsu))
+  g_samps     <- extract_node_samples(samples, "^g\\[", c(nyear, nsu))
+  logp_samps  <- extract_node_samples(samples, "^log_p.year\\[", c(nyear, consts$npars))
+  smo_age_samps <- extract_node_samples(samples, "^smo.age\\[", c(consts$nobs))
+
+  n_draws <- min(n_draws, dim(lb_mu_samps)[1])
+  message(sprintf("Running %d posterior draws...", n_draws))
+  
+  lmu_list <- vector("list", n_draws)
+  
+  for (i in seq_len(n_draws)) {
+    if (i %% 50 == 0) message("  • Draw ", i, "/", n_draws)
+
+    lb_mu_i   <- as.numeric(lb_mu_samps[i, , drop = TRUE])
+    g_i       <- g_samps[i, , , drop = TRUE]
+    logp_i    <- logp_samps[i, , , drop = TRUE]
+    smo_age_i <- as.numeric(smo_age_samps[i, , drop = TRUE])
+    
+    lmu_i <- calc_l_mu_c(
+      lb_mu        = lb_mu_i,
+      g            = g_i,
+      log_p_year   = logp_i,
+      smo_age      = smo_age_i,
+      su           = consts$su,
+      age          = consts$age,
+      hatch_year_f = consts$hatch.year.f,
+      growth_year  = consts$growth.year,
+      doy_dec      = consts$doy.dec,
+      max_age      = max_age
+    )
+
+    # replace sentinel with NA
+    lmu_i[lmu_i == -999] <- NA_real_
+    lmu_list[[i]] <- lmu_i
+  }
+
+  message("Finished recomputing all deterministic l.mu values.")
+  return(lmu_list)
+}
+
+extract_node_samples <- function(samples, pattern, dims) {
+  cols <- grep(pattern, colnames(samples), value = TRUE)
+  if (length(cols) == 0)
+    stop("No columns found for pattern: ", pattern)
+
+  arr <- as.matrix(samples[, cols, drop = FALSE])
+  ndraws <- nrow(arr)
+  dims <- as.integer(unlist(dims))
+  ncols <- ncol(arr)
+  expected <- prod(dims)
+
+  # Handle mismatched column counts gracefully
+  if (expected != ncols) {
+    warning(sprintf(
+      "Dimension mismatch for pattern '%s': expected %d, got %d. Adjusting dims automatically.",
+      pattern, expected, ncols
+    ))
+
+    if (length(dims) == 2) {
+      inferred_nyear <- ncols / dims[2]
+      dims <- c(as.integer(inferred_nyear), dims[2])
+    } else if (length(dims) == 3) {
+      inferred_nyear <- ncols / (dims[2] * dims[3])
+      dims <- c(as.integer(inferred_nyear), dims[2], dims[3])
+    } else if (length(dims) == 1) {
+      dims <- ncols
+    }
+    message(" → Inferred dims for ", pattern, ": ", paste(dims, collapse = " x "))
+  }
+
+  # Always produce an array with draw dimension first
+  full_dims <- c(ndraws, dims)
+  out <- array(as.numeric(arr), dim = full_dims)
+
+  # Guarantee minimum dimension of 2 (for single-node cases)
+  if (length(dim(out)) == 1) {
+    dim(out) <- c(ndraws, length(cols))
+  }
+
+  return(out)
+}
+
+calc_l_mu_c <- compileNimble(calc_l_mu)
+lmu_list <- recompute_lmu(as.data.frame(biph.samples), consts, calc_l_mu_c, n_draws = nrow(biph.samples))
+str(lmu_list) # [years, ind.id]
+
+```
+
+## Option 2
+
+```{r}
+
+lb_mu_med <- extract_node_samples(biph.samples, "^lb.mu\\[", c(consts$nsu)) |>
+  apply(2, median, na.rm = TRUE)
+
+g_med <- extract_node_samples(biph.samples, "^g\\[", c(consts$nyear, consts$nsu)) |>
+  apply(c(2, 3), median, na.rm = TRUE)
+
+logp_med <- extract_node_samples(biph.samples, "^log_p.year\\[", c(consts$nyear, consts$npars)) |>
+  apply(c(2, 3), median, na.rm = TRUE)
+
+
+# Ensure correct integer smolt ages (if continuous, round)
+# mean_smo_df <- mean_smo_df %>%
+#   mutate(m_smo_age = round(mean_smo_age))
+m_smo_df <- data.biph %>%
+  summarise(msmo = median(smo.age, na.rm = TRUE), .by = su)
+
+su_vec   <- rep(1:consts$nsu, each = consts$nyear)
+year_vec <- rep(1:consts$nyear, times = consts$nsu)
+nind_sim <- length(su_vec)
+
+# Join smolt age by spatial unit
+smo_age_sim <- m_smo_df$msmo[match(su_vec, m_smo_df$su)]
+
+# Other deterministic covariates
+age_sim <- 6 # arbitrary upper age (6 years) for all
+growth_year_sim <- age_sim
+doy_dec_sim <- 1.0  # end-of-year condition (full year of growth)
+hatch_year_f_sim <- pmax(1, year_vec - growth_year_sim + 1)  # ensure valid index
+max_age <- growth_year_sim
+
+lmu_sim <- calc_l_mu_c(
+  lb_mu        = lb_mu_med,
+  g            = g_med,
+  log_p_year   = logp_med,
+  su           = su_vec,
+  age          = rep(age_sim, nind_sim),
+  smo_age      = smo_age_sim,
+  hatch_year_f = hatch_year_f_sim,
+  growth_year  = rep(growth_year_sim, nind_sim),
+  doy_dec      = rep(doy_dec_sim, nind_sim),
+  max_age      = max_age
+)
+
+lmu_sim[lmu_sim == -999] <- NA_real_
+
+
+lmu_df <- as.data.frame(lmu_sim) |>
+  mutate(age_idx = row_number()) |>
+  pivot_longer(-age_idx, names_to = "ind", values_to = "length_mm") |>
+  mutate(ind = as.integer(str_remove(ind, "V")),
+         su = su_vec[ind],
+         year = year_vec[ind],
+         smo_age = smo_age_sim[ind])
+
+lmu_df %>%
+  left_join(data.biph %>% distinct(spat.unit, su)) %>%
+  filter(year %in% sample(1:26,10)) %>%
+  ggplot(aes(x = age_idx - 1, y = length_mm, group = interaction(spat.unit, year), color = factor(year)), show.legend = FALSE) +
+  geom_line(alpha = 0.7) +
+  facet_wrap(~spat.unit) +
+  geom_vline(aes(xintercept = smo_age), linetype = 2, color = "grey40", alpha = 0.5) +
+  labs(x = "age", y = "predicted length") +
+  theme_minimal() 
+
+# ggplot(aes(age_idx - 1, length_mm, group = ind, color = spat.unit)) +
+#   
+#   geom_line() +
+#   #geom_vline(aes(xintercept = smo_age), linetype = 2, color = "grey50", alpha = 0.4) +
+#   labs(x = "age",y = "predicted length [mm]") +
+#   facet_wrap(~spat.unit) +
+#   theme_minimal() +
+#   theme(panel.grid = element_blank())
+```
+
+### f.mu
+```{r}
+compute_fmu_summary_from_lmu_df <- function(lmu_df, fec_dpars, ndraws = 2000) {
+  # Ensure required columns exist
+  stopifnot(all(c("spat.unit", "year", "age_idx", "length_mm") %in% names(lmu_df)))
+  stopifnot(all(c("spat.unit", "shfa", "rafa", "mufb", "sdfb") %in% names(fec_dpars)))
+  
+  nsu <- nrow(fec_dpars)
+  
+  message("Simulating fecundity using uncertainty in a and b parameters...")
+  
+  # Preallocate output list
+  out_list <- vector("list", nsu)
+  
+  for (s in seq_len(nsu)) {
+    su_name <- fec_dpars$spat.unit[s]
+    
+    # Draw random samples for a and b
+    fa_draws <- rgamma(ndraws, shape = fec_dpars$shfa[s], rate = fec_dpars$rafa[s])
+    fb_draws <- rnorm(ndraws, mean = fec_dpars$mufb[s], sd = fec_dpars$sdfb[s])
+    
+    # Subset the deterministic lengths for this spatial unit
+    lsu <- lmu_df %>% filter(spat.unit == su_name)
+    
+    # Calculate predicted fecundity for each sample
+    fmu_samples <- replicate(
+      ndraws,
+      lsu$length_mm^sample(fb_draws, 1) * sample(fa_draws, 1)
+    )
+    
+    # Summarize posterior predictive distribution per row (age × year)
+    lsu_summary <- lsu %>%
+      mutate(
+        fmu_med = apply(fmu_samples, 1, median, na.rm = TRUE),
+        fmu_low = apply(fmu_samples, 1, quantile, probs = 0.025, na.rm = TRUE),
+        fmu_high = apply(fmu_samples, 1, quantile, probs = 0.975, na.rm = TRUE)
+      )
+    
+    out_list[[s]] <- lsu_summary
+  }
+  
+  result <- bind_rows(out_list)
+  
+  message("✅ Finished computing f.mu summaries across spatial units.")
+  return(result)
+}
+
+#fec_samples_df <- do.call(rbind, fec.samples$samples) |> as.data.frame()
+
+#lmu_df <- lmu_df %>% left_join(data.biph %>% distinct(su,spat.unit)) %>% select(-su)
+fmu_summary <- compute_fmu_summary_from_lmu_df(
+  lmu_df = lmu_df %>% left_join(data.biph %>% distinct(su,spat.unit)),
+  fec_dpars = fec.dpars,
+  ndraws = 2000
+)
+lmu_fec <- lmu_df %>%
+  left_join(fmu_summary %>% select(spat.unit, su, year, age_idx, fmu_med, fmu_low, fmu_high),
+            by = c("spat.unit", "year", "age_idx"))
+
+saveRDS(lmu_fec, file = paste0(home,"/data/lmu_fec_1104.RData"))
+```
+
+### Reshape l.mu and f.mu:s
+```{r}
+# but first save lmu and fmu.
+#flmu_list <- list(fmu_list,lmu_list)
+#saveRDS(flmu_list, file = paste0(home,"/data/flmu_list_1102.RData"))
+
+
+flmu_chunk <- function(flmu_list_chunk) {
+  purrr::imap_dfr(flmu_list_chunk, function(mat, draw_id) {
+    tibble::tibble(
+      draw = as.integer(draw_id),
+      age  = rep(seq_len(nrow(mat)), times = ncol(mat)),
+      ind  = rep(seq_len(ncol(mat)), each = nrow(mat)),
+      value = as.vector(mat)
+    )
+  }) |>
+    dplyr::filter(!is.na(value)) |>
+    dplyr::group_by(age, ind) |>
+    dplyr::summarise(
+      q50 = median(value),
+      q025 = quantile(value, 0.025),
+      q975 = quantile(value, 0.975),
+      .groups = "drop"
+    )
+}
+
+flmu_mqi <- function(flmu_list, chunk_size = 250) {
+  n_draws <- length(flmu_list)
+  chunks <- split(seq_len(n_draws), ceiling(seq_len(n_draws) / chunk_size))
+  
+  chunk_summaries <- purrr::map(chunks, function(idx) {
+    summarise_lmu_chunk(flmu_list[idx])
+  })
+  
+  # Combine across chunks by taking median of medians, etc.
+  dplyr::bind_rows(chunk_summaries) |>
+    dplyr::group_by(age, ind) |>
+    dplyr::summarise(
+      median = median(q50, na.rm = TRUE),
+      lower  = median(q025, na.rm = TRUE),
+      upper  = median(q975, na.rm = TRUE),
+      .groups = "drop"
+    )
+}
+
+lmu_df <- flmu_mqi(flmu_list)
+
+#f.mu samps
+fmu_df <- flmu_mqi(fmu_list)
+
+flmu_df <- bind_rows(lmu_df %>% mutate(variable = "l.mu"), lmu_df %>% mutate(variable = "f.mu"))
+saveRDS(flmu_df, file = paste0(home,"/data/flmu_df_1102.RData"))
+
+```
+
+approach 1, unfinished but using growth parameters estimates to predict l.mu
+```{r}
+growth.samples <- biph.samples[1:2000,]
+
+growth_pars1 <- growth.samples %>%
+  spread_draws(log_p.year[yr,sup], sep = ",") %>%
+  filter(sup %in% 1:12) %>% # first 12 sup:s are Linf 
+  rename(Linf = log_p.year,
+         su = sup) %>%
+  ungroup() %>%
+  #filter(.chain == 1) %>%
+  select(-.iteration,-.chain)
+
+growth_pars2 <- growth.samples %>%
+  spread_draws(log_p.year[yr,sup], sep = ",") %>%
+  filter(sup %in% 13:24) %>% 
+  mutate(su = sup - 12) %>% 
+  rename(k = log_p.year) %>%
+  ungroup() %>%
+  #filter(.chain == 1) %>%
+  select(-.iteration,-.chain,-sup)
+
+growth_pars3 <- growth.samples %>%
+  spread_draws(lb.mu[su], g[yr,su], sep = ",") %>%
+  ungroup() %>%
+  #filter(.chain == 1) %>%
+  select(-.iteration,-.chain)
+
+#su:s in growth data
+sun <- data.biph %>% distinct(su, spat.unit)
+growth.pars <- left_join(growth_pars1, growth_pars2) %>%
+  left_join(growth_pars3) %>%
+  left_join(sun) %>%
+  select(-su)
+
+# smolt age samples
+sages <- growth.samples %>%
+  spread_draws(smo.age[i]) %>%
+  ungroup() %>%
+  #filter(.chain == 1) %>%
+  select(-.iteration,-.chain)
+
+#fec
+samplesf <- fec.samp$samples$chain1[1:2000,]
+sunf <- data.fec %>%
+  distinct(spat.unit,su)
+
+fec_pars <- samplesf %>%
+  spread_draws(a[su], b[su],sep = ",") %>%
+  select(-.iteration,-.chain) %>%
+  ungroup() %>%
+  left_join(sunf) %>%
+  select(-su)
+
+# Step 3: join the two draw frames (assuming independence)
+# This matches draw i from each posterior; you can also do cartesian join if needed
+# joint_draws <- bind_cols(
+#   growth_pars %>% arrange(.draw),
+#   fec_pars %>% arrange(.draw) %>% select(-.draw)
+# )
+
+joint_draws <- 
+  growth.pars %>% 
+  filter(spat.unit %in% sunf$spat.unit) %>%
+  left_join(fec_pars %>% filter(spat.unit %in% sun$spat.unit),
+            by = join_by(.draw,spat.unit))
+  
+joint_draws_age <- joint_draws %>%
+  expand_grid(age = 1:10)
+  
+# Step 4: Generate predicted length and fecundity per draw
+# Replace with your actual function that rebuilds length for given parameters
+length_pred <- function(lb_mu, par, g, age, doy_dec = 1) {
+  # Example placeholder: VB increment
+  lb_mu + (exp(Linf) - lb_mu) * (1 - exp(-exp(k) * age * doy_dec))
+}
+
+fec_pred <- function(L, a, b) a * L^b
+
+# Suppose you want predictions for su = 1..nsu, years = vector of interest
+preds <- 
+  expand_grid(su = 1:nsu,
+              year = years_vec,
+              draw = 1:nrow(joint_draws)) %>%
+  # extract parameters per draw/spatial unit
+  mutate(lb = map2_dbl(draw, su, ~ joint_draws[[paste0("lb.mu[", .y, "]")]][.x]),
+         a  = map2_dbl(draw, su, ~ joint_draws[[paste0("a[", .y, "]")]][.x]),
+         b  = map2_dbl(draw, su, ~ joint_draws[[paste0("b[", .y, "]")]][.x]),
+         # for brevity, pick one age for fecundity (say age=2)
+         L  = predict_length(lb, 
+                             par = c(joint_draws[[paste0("log_p.year[", year, ",", su, "]")]][draw]),
+                             g   = joint_draws[[paste0("g[", year, ",", su, "]")]][draw],
+                             age = 2),
+         fec = predict_fecundity(L, a, b))
+
+# Step 5: summarize with tidybayes
+fec_summary <- preds %>%
+  group_by(su, year) %>%
+  median_qi(fec, .width = c(.5, .8, .95))
+
+fec_summary
+```
+
+```
+
+
+
+## Fecundity over time 
+:::: columns
+::: {.column width="50%"}
+  
+:::
+::: {.column width="450%"}
+```{r fig.width=5, fig.height=5, out.width="90%"}
+lmu_fec %>%
+  rename(age = age_idx) %>%
+  filter(age > smo_age) %>%
+  filter(year %in% sample(1:26,10)) %>%
+  ggplot(aes(x = age - 1, y = length_mm, group = interaction(spat.unit, year), color = factor(year)), show.legend = FALSE) +
+  geom_line(alpha = 0.7) +
+  facet_wrap(~spat.unit) +
+  geom_vline(aes(xintercept = smo_age), linetype = 2, color = "grey40", alpha = 0.5) +
+  labs(x = "age", y = "predicted length") +
+  theme_minimal() 
+```
+:::
+::::
+## Fecundity over time 
+```{r fig.width=7, fig.height=4, out.width="150%"}
+lmu_fec %>%
+  rename(age = age_idx) %>%
+  filter(age > smo_age) %>%
+  filter(age == smo_age+2) %>%# 1 SW
+  #filter(variable == "f.mu") %>%
+  ggplot(aes(year, fmu_med)) +
+  geom_line() +
+  geom_errorbar(aes(ymin = fmu_low, ymax = fmu_high), alpha = 0.3) + 
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  labs(title = "2SW", subtitle = "median & 95% cred. intrval", y = "#eggs") 
+
+```
+## Fecundity over time 
+```{r fig.width=7, fig.height=4, out.width="150%"}
+lmu_fec %>%
+  rename(age = age_idx) %>%
+  filter(age > smo_age) %>%
+  filter(age == smo_age+2) %>%# 1 SW
+  #filter(variable == "f.mu") %>%
+  ggplot(aes(year, fmu_med)) +
+  geom_line() +
+  #geom_errorbar(aes(ymin = fmu_low, ymax = fmu_high), alpha = 0.3) + 
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  labs(title = "2SW", subtitle = "median", y = "#eggs") 
+
+```
