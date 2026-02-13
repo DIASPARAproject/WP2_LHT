@@ -303,6 +303,41 @@ ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 17, units = "cm"
 #   theme(axis.text.y = element_blank())
 ```
 
+```{r}
+dfp <- schnu.samples %>%
+  gather_draws(bpar[main_bas,pars], sep = ",") %>%
+  mutate(par = case_when(pars == 1 ~ "L1",
+                         pars == 2 ~ "P",
+                         pars == 3 ~ "L2",
+                         pars == 4 ~ "K"),
+         val = case_when(!pars == 2 ~ exp(.value),
+                         .default = .value)) %>%
+  ungroup() %>%
+  left_join(data.schnu %>% distinct(ecoreg, main_bas)) %>%
+  left_join(var.lats) %>%
+  mutate(ecoreg = fct_reorder(ecoreg, -m.lat)) 
+
+cor_draws <- schnu.samples %>%
+  spread_draws(bpar[mb, p], sep = ",") %>%
+  pivot_wider(names_from = p, values_from = bpar, names_prefix = "par") %>%
+  group_by(.draw) %>%
+  summarize(corr_P_k = cor(par2, par4),
+            corr_P_L1 = cor(par2, par1),
+            corr_P_L2 = cor(par2, par3),
+            corr_k_L1 = cor(par4, par1),
+            corr_k_L2 = cor(par4, par3),
+            corr_L1_L2 = cor(par1, par3)) %>%
+  pivot_longer(cols = 2:7, names_to = "pars", values_to = "corr") 
+
+cor_draws %>%
+  ggplot(aes(x = corr)) +
+  geom_histogram(fill = "grey") +
+  geom_vline(xintercept = mean(cor_draws$corr_P_k), color = "darkgrey", linetype = "dashed") +
+  facet_wrap(~pars)
+  # labs(#x = "Correlation between L2 and K across basins",
+  #      #y = "Posterior frequency",
+  #      title = "Spatial correlation P and K")
+```
 
 #### Covariates
 ```{r, cache = FALSE}
