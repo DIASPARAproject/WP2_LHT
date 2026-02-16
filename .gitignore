@@ -19,3 +19,4 @@ report/*
 !report/*LHTmodels_v3.qmd
 
 *samples
+*misc.R
