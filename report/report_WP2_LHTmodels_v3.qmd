@@ -58,7 +58,7 @@ The analyses of LHTs of Atlantic salmon prioritize analysing:
 
 This choice is based on priority in recent work by ICES WGNAS and ICES WGBAST to improve estimates of abundance of spawners and their reproductive output to estimate recruitment and stock productivity. The analyses have been revised to suit data availability.
 
-To facilitate comparisons of LHT estimates, and analyses of links between different LHTs, we build models based on biological and ecological principles where possible, such as Pütter type growth models for length at age [@klemen2003;@quince2005;@schnute1981]. Furthermore, we use hierarchical Bayesian models for building LHT models to capture variation at different spatial scales [@Stuber2020]. This approach also provides flexibility in tailoring process models, incorporating prior information and sharing information across spatiotemporal scales to improve estimates in data poor regions. 
+To facilitate comparisons of LHT estimates, and analyses of links between different LHTs, we build models based on biological and ecological principles where possible, such as Pütter type growth models for length at age [@klemen2003;@quince2008;@schnute1981]. Furthermore, we use hierarchical Bayesian models for building LHT models to capture variation at different spatial scales [@Stuber2020]. This approach also provides flexibility in tailoring process models, incorporating prior information and sharing information across spatiotemporal scales to improve estimates in data poor regions. 
 
 ## Eel
 

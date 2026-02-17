@@ -1,0 +1,255 @@
+---
+title: "Salmon spatiotemporal fecundity estimates "
+subtitle: "DIASPARA WP 2.2"
+author: "Viktor Thunell" 
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show code"
+    page-layout: full
+    embed-resources: true
+    toc: true
+knitr: 
+  opts_chunk:
+    fig.align: center
+    out-width: 80%
+editor: source
+execute: 
+  echo: true
+  eval: true
+  cache: true
+reference-location: document
+bibliography: diaspara.bib
+---
+
+## Introduction 
+
+Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In salmon, where the majority of fish only spawn once, fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with length being a suitable proxy for fecundity [@lambert2008]. Changes in sizes of salmon returning to spawn can therefore be used to calculate changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecusnity in DIASPARA.
+
+The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase. These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
+
+The Assessment Working Group on Baltic Salmon and Trout (WGBAST) uses fecundity by sea winter age (eggs per female) but this is currently not stock specific and is time invariant. Consequently, knowledge on changes in fecundity over time can help prioritize needs in future improvements of the stock assessment model [@wgbast2025]. 
+
+To adress these issues, we combine the spatial model for fecundity at length with the spatiotemporal model for length at age to produce spatiotemporal estimates of fecundity of 1,2 and 3 sea winter (SW) salmon. 
+
+In detail, we propagate the uncertainty in fecundity parameters $a_s$ and $b_s$ (see main text, section *Spatial variation in salmon fecundity - Model description*) to estimates of fecundity over time by combining posterior draws of fecundity parameters $a$ and $b$ (by spatial unit) from fecundity at length model with posterior draws of $l_{\mu}$ by spatial unit, cohort, age (growth year), and smolt age and calculate fecundity as $log(F_{y,j}) = a_j + b_j \times \log\left(\frac{L_i}{\bar{L}}\right)$.
+
+
+```{r}
+#| message: false
+#| warning: false
+#| cache: false
+#| echo: false
+#| output: false
+
+# Load libraries, install if needed
+pkgs <- c("tidyverse", "tidylog", "devtools","viridis","nls.multstart", "broom", "patchwork", "coda", "boot", "tidybayes","bayesplot", "nimble", "here", "purrr")
+
+# remotes::install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
+
+if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
+    install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
+  }
+
+invisible(lapply(pkgs, library, character.only = T))
+
+options(ggplot2.continuous.colour = "viridis")
+theme_set(theme_minimal())
+
+# Set path
+color_scheme_set("viridis")
+home <- here::here()
+
+## Read and define data
+salfec <- readRDS(file = "~/gitProjects/diasp-lht/data/data-for-2-2/salmon-fec_2025-12-21.RData")
+
+data.fec <- salfec %>%
+  drop_na(spat.unit) %>%
+  mutate(n.eggs = if_else(is.na(n.eggs.tot), n.eggs.str, n.eggs.tot),
+         su = as.integer(factor(spat.unit)),
+         length.lc = log(length_mm) - log(mean(length_mm)))
+
+sallaa <- readRDS(file = "~/gitProjects/diasp-lht/data/data-for-2-2/salmon-laa_2025-12-21.RData") %>%
+  rename(year = fi_year,
+         site = sai_location,
+         sea.age = sea_age_year,
+         juv.age = juvenile_age_year,
+         tot.age = tot_age_year,
+         lat = fisa_y_4326,
+         lon = fisa_x_4326) %>%
+  #filter out tot.age = 0 individuals
+  filter(!(sea.age == 0 & juv.age == 0)) %>%
+  #filter out non-aged individuals (~90000 individuals)
+  filter(!(is.na(sea.age) & is.na(juv.age))) %>%
+  # removes smolt.age = 0:
+  filter(!(age.type == "both" & juv.age == 0)) %>%
+  mutate(hatch.year = year-tot.age) %>% # to filter data based o hatch year instead of year to predict growth pars before catch year
+  filter(!is.na(juv.age), # removes age.type = "sea.only"
+         !is.na(year),
+         hatch.year > 1997)
+
+data.biph <- sallaa %>%
+  filter(!(is.na(sex) & age.type == "both")) %>% # removes 27 000 rows
+  mutate(yday.may1 = if_else(is.na(date), 1, yday(date) - yday("2025-05-01")+1), 
+         doy.dec = if_else(yday.may1 > 0, yday.may1, yday.may1+365)/365,
+         tot.age.dec = if_else(yday.may1 > 0, tot.age+doy.dec, tot.age+doy.dec-1),
+         smo.age = if_else(age.type == "both", juv.age, NA),
+         sea.age = if_else(is.na(sea.age), 0, sea.age),
+         g.year = trunc(tot.age.dec)+1, # + 1 to index age 0 individuals
+         hatch.year.f = as.numeric(factor(hatch.year, levels = sort(unique(hatch.year)), labels = seq_along(sort(unique(hatch.year))))),
+         year.f = as.integer(factor(year)),
+         sex = as.integer(if_else(sex == "f", 1,2)),
+         su = as.integer(factor(spat.unit))) %>%
+  mutate(ind.id = row_number())
+
+# "both" data (individuals caught at sea)
+data.b <- data.biph %>%
+  filter(!is.na(smo.age))
+
+# "juve.age" data (immature individuals caught in freshwater)
+data.j <- data.biph %>%
+  filter(age.type == "juve.only") %>%
+  rename(length_mm_j = length_mm)
+
+```
+
+## Combine length and fecundity MCMC samples
+```{r}
+#| message: false
+
+# read fecundity at length samples 
+fec.samples <- readRDS(paste0(home,"/models_salmon/samples/fec_samples_2026-01-15.RData"))$samples %>%
+  spread_draws(a[su],b[su]) %>%
+  # remove draws aove 1500 to match number with laa samples
+  filter(.draw <= 1500) %>%
+  left_join(data.fec %>% distinct(su, spat.unit)) %>%
+  ungroup() %>%
+  select(-su,-.iteration,-.chain )
+
+# read length at age mcmc samples 
+laa.samples <- readRDS(paste0(home,"/models_salmon/samples/salaa_samples_2025-12-22.RData"))$samples
+
+# mode of smolt ages by spatial unit 
+mosa <- data.biph %>%
+  filter(!is.na(smo.age),
+                sex == 1) %>%
+  summarise(mosa = Mode(smo.age), .by = spat.unit)
+# maximum sea age by spatial unit 
+masu <- data.biph %>%
+  filter(!is.na(smo.age)) %>%
+  summarise(ma = max(g.year), .by = su) %>%
+  arrange(su)
+
+# select the expected value parameter l.mu
+node.sub <- grep("l.mu", colnames(laa.samples[[1]]), value = TRUE)
+laa.samples_2 <- laa.samples[, node.sub[], drop = FALSE] %>%
+  spread_draws(l.mu[su,smo.age,coh,sex,gy], sep = ",") %>%
+  # remove males and draw 1501 and 1 (a few NA l.mu:s there)
+  filter(sex == 1,
+         gy %in% c(smo.age+2, smo.age+3, smo.age+4, smo.age+5, smo.age+6, smo.age+7), 
+         .draw <= 1500 & .draw > 1
+         ) %>%
+  left_join(data.biph %>% distinct(su, spat.unit)) %>%
+  # filter out the spatial units for which we have fecundity estimates
+  filter(spat.unit %in% unique(fec.samples$spat.unit)) %>%
+  # filter out the most common smolt age per spatial unit and maximum ages
+  filter(smo.age == mosa[su,2],
+         gy <= masu[su,2])  %>%
+  ungroup() %>%
+  select(-sex,-su,-.iteration,-.chain )
+
+```
+
+## Calculate fecundity per MCMC draw
+```{r}
+#| message: false
+
+lf.samples <- laa.samples_2 %>%
+  # join in mcmc draws of a and b from fecundity model
+  left_join(fec.samples,  by = c("spat.unit",".draw")) %>%
+  mutate(length.lc = log(l.mu) - log(mean(l.mu)),
+         fec = exp(a + b * length.lc),
+         year = coh + gy + 1998) %>%
+  rename(length = l.mu)
+```
+
+## Results
+
+
+Changes in fecundity over time here reflects changes in length at age of 1, 2 and 3 SW by spatial unit over time [@fig-salft1,@fig-salft2,@fig-salft3] inferred from spatial-unit-specific fecundity-length relationships. The length at age of salmon here follows a von Bertalanffy type growth trajectory and differences between the sea ages of salmon within a spatial unit will differ with a given offset... 
+
+Fecundity as a proxy for the reproductive capactiy of the different sea ages of spawners
+
+TEXT TO COME
+
+::: {#fig-salft1}
+```{r}
+#| message: false
+
+lf.samples %>%
+  filter(gy == smo.age+2,
+         year < 2025,
+         #!spat.unit %in% c("Baltic.sea:AU-2","Baltic.sea:AU-3")
+         ) %>%
+  ggplot() +
+  geom_boxplot(aes(y = fec, x = factor(year)),
+               outliers = FALSE, show.legend = FALSE) +
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
+  labs(title = "1SW")
+```
+
+Fecundity (number of eggs) of 1SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+:::
+
+::: {#fig-salft2}
+```{r}
+lf.samples %>%
+  filter(gy == smo.age+3,
+         year < 2025) %>%
+  ggplot() +
+  geom_boxplot(aes(y = fec, x = factor(year)),
+               outliers = FALSE, show.legend = FALSE) +
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
+  labs(title = "2SW")
+```
+
+Fecundity (number of eggs) of 2SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+:::
+
+::: {#fig-salft3}
+```{r}
+lf.samples %>%
+  filter(gy == smo.age+4,
+         year < 2025) %>%
+  ggplot() +
+  geom_boxplot(aes(y = fec, x = factor(year)),
+               outliers = FALSE, show.legend = FALSE) +
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
+  labs(title = "3SW")
+```
+
+Fecundity (number of eggs) of 3SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+:::
+
+::: {#fig-salft4}
+```{r}
+lf.samples %>%
+  group_by(year,gy,spat.unit) %>%
+  median_qi(fec) %>%
+  filter(year < 2025) %>%
+  ggplot() +
+  geom_line(aes(y = fec, x = year, color = factor(gy))) +
+  facet_wrap(~spat.unit, scales = "free_y") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
+  labs(color = "Sea age", y = "#eggs")
+```
+Fecundity (number of eggs) of salmon over time by spatial unit and sea age (color scale). Predictions are shown for all existing sea ages in a spatial unit over the time period. 
+:::
