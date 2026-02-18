@@ -25,13 +25,13 @@ bibliography: diaspara.bib
 
 ## Introduction 
 
-Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In salmon, where the majority of fish only spawn once, fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with length being a suitable proxy for fecundity [@lambert2008]. Changes in sizes of salmon returning to spawn can therefore be used to calculate changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecusnity in DIASPARA.
+Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In salmon, where the majority of fish only spawn once, fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantiative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
 
-The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase. These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
+The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase (sea winters, SW). These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
 
-The Assessment Working Group on Baltic Salmon and Trout (WGBAST) uses fecundity by sea winter age (eggs per female) but this is currently not stock specific and is time invariant. Consequently, knowledge on changes in fecundity over time can help prioritize needs in future improvements of the stock assessment model [@wgbast2025]. 
+The Assessment Working Group on Baltic Salmon and Trout (WGBAST) uses fecundity by sea winter age but this is currently not stock specific and is time invariant. Consequently, knowledge on changes in fecundity over time can help prioritize needs in future improvements of the stock assessment model [@wgbast2025]. 
 
-To adress these issues, we combine the spatial model for fecundity at length with the spatiotemporal model for length at age to produce spatiotemporal estimates of fecundity of 1,2 and 3 sea winter (SW) salmon. 
+To address these issues, we combine the spatial model for fecundity at length with the spatiotemporal model for length at age to produce spatiotemporal estimates of fecundity of salmon with varying number of winters spent at sea. A key assumption for this analyses is that individual fecundity is not subject to environmental variation nor evolutionary processes.
 
 In detail, we propagate the uncertainty in fecundity parameters $a_s$ and $b_s$ (see main text, section *Spatial variation in salmon fecundity - Model description*) to estimates of fecundity over time by combining posterior draws of fecundity parameters $a$ and $b$ (by spatial unit) from fecundity at length model with posterior draws of $l_{\mu}$ by spatial unit, cohort, age (growth year), and smolt age and calculate fecundity as $log(F_{y,j}) = a_j + b_j \times \log\left(\frac{L_i}{\bar{L}}\right)$.
 
@@ -176,19 +176,21 @@ lf.samples <- laa.samples_2 %>%
 
 ## Results
 
+Changes in fecundity over time is presented for 1, 2 and 3 SW spawners with posterior uncertainty in @fig-salft1,@fig-salft2 and @fig-salft3 and for all ages spawners that has occurred within the spatial units in the analysed time frame (@fig-salft4,without posterior uncertainty).
 
-Changes in fecundity over time here reflects changes in length at age of 1, 2 and 3 SW by spatial unit over time [@fig-salft1,@fig-salft2,@fig-salft3] inferred from spatial-unit-specific fecundity-length relationships. The length at age of salmon here follows a von Bertalanffy type growth trajectory and differences between the sea ages of salmon within a spatial unit will differ with a given offset... 
+The analyses suggest considerable regional differences in the change in fecundity over time where in the Baltic sea, fecundity would have increased in the analysed time frame, while it is the opposite for the North Atlantic (France, Ireland and Sweden). Here, FRance and Sweden share a similar temporal trend where recent years 
 
-Fecundity as a proxy for the reproductive capactiy of the different sea ages of spawners
+Note that the temporal pattern in this analysis reflect changes in length for fish returning to spawn and spatial-unit-specific length-fecundity relationships (see main text). The length at age of salmon here follows a von Bertalanffy type growth trajectory and differences between the ages of salmon within a spatial unit and year will differ with an offset given by their growth trajectory. This effect is dependent on the temporal trend in the von Bertalanffy growth coefficient $k$ and as growth levels off with age, changes in $k$ with time has stronger effects on yong spawners compared to older spawners (compare e.g. 1 and 3 SW fecundity in Ireland_west, @fig-salft4).
 
-TEXT TO COME
+Given the considerable change in fecundity resulting from changes in length in the North Atlantic spatial units, it should have large consequences for the reproductive capacity of the stocks given that common age at spawning remains constant. 
+
 
 ::: {#fig-salft1}
 ```{r}
 #| message: false
 
 lf.samples %>%
-  filter(gy == smo.age+2,
+  filter(gy == smo.age+2, # 1SW
          year < 2025,
          #!spat.unit %in% c("Baltic.sea:AU-2","Baltic.sea:AU-3")
          ) %>%
@@ -208,6 +210,7 @@ Fecundity (number of eggs) of 1SW salmon over time by spatial unit. Boxplots sum
 ```{r}
 lf.samples %>%
   filter(gy == smo.age+3,
+         # remove years (2025) without data
          year < 2025) %>%
   ggplot() +
   geom_boxplot(aes(y = fec, x = factor(year)),
@@ -225,6 +228,7 @@ Fecundity (number of eggs) of 2SW salmon over time by spatial unit. Boxplots sum
 ```{r}
 lf.samples %>%
   filter(gy == smo.age+4,
+         # remove years (2025) without data
          year < 2025) %>%
   ggplot() +
   geom_boxplot(aes(y = fec, x = factor(year)),
@@ -243,13 +247,15 @@ Fecundity (number of eggs) of 3SW salmon over time by spatial unit. Boxplots sum
 lf.samples %>%
   group_by(year,gy,spat.unit) %>%
   median_qi(fec) %>%
+  # remove years (2025) without data
   filter(year < 2025) %>%
   ggplot() +
-  geom_line(aes(y = fec, x = year, color = factor(gy))) +
+  # minus 2 because gy = 2 is 1SW (smo.age is age = 0 and gy is age+1)
+  geom_line(aes(y = fec, x = year, color = factor(gy-2))) +
   facet_wrap(~spat.unit, scales = "free_y") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
-  labs(color = "Sea age", y = "#eggs")
+  labs(color = "#sea winters", y = "#eggs")
 ```
-Fecundity (number of eggs) of salmon over time by spatial unit and sea age (color scale). Predictions are shown for all existing sea ages in a spatial unit over the time period. 
+Fecundity (number of eggs) of salmon over time by spatial unit and number of years spent at sea (sea winters, color scale). Predictions are shown for all sea winters salmon in a spatial unit existing over the time period despite some being rare.
 :::
