@@ -29,7 +29,7 @@ execute:
 #| cache: false
 
 # Load libraries, install if needed
-pkgs <- c("tidyverse", "tidylog", "devtools","viridis","sf","patchwork","coda","tidybayes","bayesplot", "nimble", "here","reshape2")
+pkgs <- c("tidyverse", "tidylog","patchwork", "devtools","viridis","sf","patchwork","coda","tidybayes","bayesplot", "nimble", "here","reshape2")
 
 if(length(setdiff(pkgs,rownames(installed.packages()))) > 0){
     install.packages(setdiff(pkgs, rownames(installed.packages())), dependencies = T)
@@ -315,24 +315,31 @@ cor_draws %>%
 
 #### Covariates
 ```{r, cache = FALSE}
-schnu.samples %>%
+a <- schnu.samples %>%
   gather_draws(hK[hab], sep = ",") %>%
   ungroup() %>%
   left_join(data.schnu %>% distinct(hab,ser_hty_code)) %>%
-  #filter(!is.na(ecoreg)) %>%
   ggplot() +
   geom_boxplot(aes(x = .value, y = ser_hty_code)) +
-  #facet_wrap(~ecoreg, scales = "free", ncol = 3) +
-  labs(y = "habitat") +
+  theme(axis.title.x = element_blank()) +
+  labs(y = "habitat") 
 
-schnu.samples %>%
-  gather_draws(btL,btK,bsL,bsK) %>%
+b <- schnu.samples %>%
+  gather_draws(btK,bsK) %>%
   ungroup() %>%
   ggplot() +
-  geom_boxplot(aes(x = .value)) +
-  facet_wrap(~.variable, ncol = 1 , scales = "free") +
-  theme(axis.text.y = element_blank())
-  labs(y = "")
+  geom_boxplot(aes(x = .value, y  = .variable,)) +
+  theme(axis.title.x = element_blank())
+
+c <- schnu.samples %>%
+  gather_draws(btL,bsL) %>%
+  ungroup() %>%
+  ggplot() +
+  geom_boxplot(aes(x = .value, y  = .variable)) +
+  #facet_wrap(~.variable, ncol = 1 , scales = "free") +
+  theme(axis.title.x = element_blank())
+
+a + (b/c + plot_layout(axis_titles = "collect"))
 ggsave(paste0(home, "/report/elaa_bLK.png"), width = 17, height = 14, units = "cm")
 ```
 

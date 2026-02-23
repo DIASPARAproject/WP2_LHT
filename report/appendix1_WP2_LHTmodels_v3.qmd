@@ -25,7 +25,7 @@ bibliography: diaspara.bib
 
 ## Introduction 
 
-Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In salmon, where the majority of fish only spawn once, fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantiative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
+Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In Atlantic salmon, *Salmo salar*, where semelparity is common (and generally the case in the North Atlantic while iteroparity is dominating in Baltic sea populations), fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantitative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
 
 The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase (sea winters, SW). These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
 
@@ -33,8 +33,11 @@ The Assessment Working Group on Baltic Salmon and Trout (WGBAST) uses fecundity 
 
 To address these issues, we combine the spatial model for fecundity at length with the spatiotemporal model for length at age to produce spatiotemporal estimates of fecundity of salmon with varying number of winters spent at sea. A key assumption for this analyses is that individual fecundity is not subject to environmental variation nor evolutionary processes.
 
-In detail, we propagate the uncertainty in fecundity parameters $a_s$ and $b_s$ (see main text, section *Spatial variation in salmon fecundity - Model description*) to estimates of fecundity over time by combining posterior draws of fecundity parameters $a$ and $b$ (by spatial unit) from fecundity at length model with posterior draws of $l_{\mu}$ by spatial unit, cohort, age (growth year), and smolt age and calculate fecundity as $log(F_{y,j}) = a_j + b_j \times \log\left(\frac{L_i}{\bar{L}}\right)$.
+In detail, we propagate the uncertainty in spatial fecundity parameters $a_j$ and $b_j$ (for spatial unit $j$, see main text, section *Spatial variation in salmon fecundity - Model description*) to estimates of fecundity over time ($F_{y,j}$ in year $y$) by combining posterior draws of fecundity parameters $a$ and $b$ from the fecundity at length model with posterior draws of $l_{\mu}$ (predicted length at age) by spatial unit, cohort, age (growth year), and smolt age. Following the model formulation (main text), we calculate fecundity on the  $log$ scale based on mean centered $log$ length:
 
+$$log(F_{y,j}) = a_j + b_j \times \log\left(\frac{l_{\mu}}{\bar{l_{\mu}}}\right)$$
+
+As the model for length at age is smolt age specific, we predict spatiotemporal fecundity for smolt ages used in the assessment models. In the Baltic (for WGBAST) this is two year old smolts for Assessment Unit AU3 and three year old smolts in AU1 and AU2 (and we lack fecundity estimates for AU4-6). For the North Atlantic salmon and the WGNAS LCM model this is smolt ages 1-6, however fecundity is only predicted for existing smolt ages for a spatial unit.
 
 ```{r}
 #| message: false
@@ -130,12 +133,6 @@ fec.samples <- readRDS(paste0(home,"/models_salmon/samples/fec_samples_2026-01-1
 # read length at age mcmc samples 
 laa.samples <- readRDS(paste0(home,"/models_salmon/samples/salaa_samples_2025-12-22.RData"))$samples
 
-# mode of smolt ages by spatial unit 
-mosa <- data.biph %>%
-  filter(!is.na(smo.age),
-                sex == 1) %>%
-  summarise(mosa = Mode(smo.age), .by = spat.unit)
-# maximum sea age by spatial unit 
 masu <- data.biph %>%
   filter(!is.na(smo.age)) %>%
   summarise(ma = max(g.year), .by = su) %>%
@@ -154,7 +151,7 @@ laa.samples_2 <- laa.samples[, node.sub[], drop = FALSE] %>%
   # filter out the spatial units for which we have fecundity estimates
   filter(spat.unit %in% unique(fec.samples$spat.unit)) %>%
   # filter out the most common smolt age per spatial unit and maximum ages
-  filter(smo.age == mosa[su,2],
+  filter(#smo.age == mosa[su,2],
          gy <= masu[su,2])  %>%
   ungroup() %>%
   select(-sex,-su,-.iteration,-.chain )
@@ -176,21 +173,24 @@ lf.samples <- laa.samples_2 %>%
 
 ## Results
 
-Changes in fecundity over time is presented for 1, 2 and 3 SW spawners with posterior uncertainty in @fig-salft1,@fig-salft2 and @fig-salft3 and for all ages spawners that has occurred within the spatial units in the analysed time frame (@fig-salft4,without posterior uncertainty).
+Changes in fecundity over time is presented for 1 and 2 SW spawners with posterior uncertainty in @fig-salft1 and @fig-salft2, for 3-5SW Baltic spawners in @fig-salft3, and for all ages spawners that has occurred within the spatial units in the analysed time frame (@fig-salft4,without posterior uncertainty). The dependence on smolt age in our biphasic growth model for North Atlantic salmon, resulting in variation in fecundity is shown in @fig-salft3b.
 
-The analyses suggest considerable regional differences in the change in fecundity over time where in the Baltic sea, fecundity would have increased in the analysed time frame, while it is the opposite for the North Atlantic (France, Ireland and Sweden). Here, FRance and Sweden share a similar temporal trend where recent years 
+The analyses suggest considerable regional differences in the change in fecundity over time where in the Baltic sea, fecundity would have increased in the analysed time frame, while it is the opposite for the North Atlantic (France, Ireland and Sweden). Here, France and Sweden share a similar temporal trend where recent years 
 
 Note that the temporal pattern in this analysis reflect changes in length for fish returning to spawn and spatial-unit-specific length-fecundity relationships (see main text). The length at age of salmon here follows a von Bertalanffy type growth trajectory and differences between the ages of salmon within a spatial unit and year will differ with an offset given by their growth trajectory. This effect is dependent on the temporal trend in the von Bertalanffy growth coefficient $k$ and as growth levels off with age, changes in $k$ with time has stronger effects on yong spawners compared to older spawners (compare e.g. 1 and 3 SW fecundity in Ireland_west, @fig-salft4).
 
 Given the considerable change in fecundity resulting from changes in length in the North Atlantic spatial units, it should have large consequences for the reproductive capacity of the stocks given that common age at spawning remains constant. 
-
 
 ::: {#fig-salft1}
 ```{r}
 #| message: false
 
 lf.samples %>%
-  filter(gy == smo.age+2, # 1SW
+  filter(
+    # WGBAST assume 3 year old smolts in AU1 or 2, and then 2 year old smolts in AU 3 and 4.  
+    !(spat.unit %in% c("Baltic.sea:AU-1","Baltic.sea:AU-2") & !smo.age == 3),
+    !(spat.unit %in% c("Baltic.sea:AU-3","Baltic.sea:AU-4") & !smo.age == 2),
+    gy == smo.age+2, # 1SW
          year < 2025,
          #!spat.unit %in% c("Baltic.sea:AU-2","Baltic.sea:AU-3")
          ) %>%
@@ -203,43 +203,72 @@ lf.samples %>%
   labs(title = "1SW")
 ```
 
-Fecundity (number of eggs) of 1SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+Fecundity (number of eggs) of 1SW salmon over time by spatial unit (both North Atlantic and Baltic). In the Baltic sea, smolt age 2 in shown for Assessment Unit AU3 and smolt age 3 in AU1 and AU2, for the North Atlantic salmon, fecundity is marginalised over smolt ages. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
 :::
 
 ::: {#fig-salft2}
 ```{r}
 lf.samples %>%
-  filter(gy == smo.age+3,
-         # remove years (2025) without data
-         year < 2025) %>%
+  filter(# WGBAST assume 3 year old smolts in AU1 or 2, and then 2 year old smolts in AU 3 and 4.  
+    !(spat.unit %in% c("Baltic.sea:AU-1","Baltic.sea:AU-2") & !smo.age == 3),
+    !(spat.unit %in% c("Baltic.sea:AU-3","Baltic.sea:AU-4") & !smo.age == 2),
+    gy == smo.age+3,
+    # remove years (2025) without data
+    year < 2025) %>%
   ggplot() +
   geom_boxplot(aes(y = fec, x = factor(year)),
                outliers = FALSE, show.legend = FALSE) +
   facet_wrap(~spat.unit, scales = "free_y") +
   theme_minimal() +
-  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
+  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) +
   labs(title = "2SW")
 ```
 
-Fecundity (number of eggs) of 2SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+Fecundity (number of eggs) of 2SW salmon over time by spatial unit (both North Atlantic and Baltic). In the Baltic sea, smolt age 2 in shown for Assessment Unit AU3 and smolt age 3 in AU1 and AU2, for the North Atlantic salmon, fecundity is marginalised over smolt ages. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
 :::
 
 ::: {#fig-salft3}
 ```{r}
 lf.samples %>%
-  filter(gy == smo.age+4,
-         # remove years (2025) without data
-         year < 2025) %>%
+  filter(case_when(
+    # WGBAST assume 3 year old smolts in AU1 or 2, and then 2 year old smolts in AU 3 and 4.  
+    spat.unit %in% c("Baltic.sea:AU-1","Baltic.sea:AU-2") ~ smo.age == 3,
+    spat.unit %in% c("Baltic.sea:AU-3","Baltic.sea:AU-4") ~ smo.age == 2),
+    # filter out 3, 4 and 5 SW
+    gy == (smo.age + 4) | gy == (smo.age + 5) | gy == (smo.age + 6),
+    #gy %in% c(smo.age+4,smo.age+5,smo.age+6)) %>%
+   year < 2025) %>%
+  mutate(SW = paste0(gy-smo.age-1,"SW")) %>%
   ggplot() +
   geom_boxplot(aes(y = fec, x = factor(year)),
                outliers = FALSE, show.legend = FALSE) +
-  facet_wrap(~spat.unit, scales = "free_y") +
+  facet_grid(spat.unit~SW, scales = "free") +
   theme_minimal() +
-  theme(axis.text = element_text(angle = 45, hjust = 1, size = rel(.75))) +
-  labs(title = "3SW")
+  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) 
 ```
 
-Fecundity (number of eggs) of 3SW salmon over time by spatial unit. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+Fecundity (number of eggs) of 3-5SW salmon over time by spatial unit in the Baltic sea for smolt age 2 in Assessment Unit AU3 and smolt age 3 in AU1 and AU2. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
+:::
+
+::: {#fig-salft3b}
+```{r}
+lf.samples %>%
+  filter(# WGBAST assume 3 year old smolts in AU1 or 2, and then 2 year old smolts in AU 3 and 4.  
+    !str_detect(spat.unit,"AU"),
+    gy == (smo.age + 2) | gy == (smo.age + 3),
+    # remove years (2025) without data
+    year < 2025) %>%
+  mutate(SW = paste0(gy-smo.age-1,"SW")) %>%
+  ggplot() +
+  geom_boxplot(aes(y = fec, x = factor(year), color = SW),
+               outliers = FALSE) +
+  facet_grid(smo.age~spat.unit, scales = "free_y") +
+  scale_x_discrete(breaks = seq(2002, 2024, by = 2)) +
+  theme_minimal() +
+  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) 
+```
+
+Fecundity (number of eggs) of 1 and 2SW salmon over time by North Atlantic spatial units (columns) and smolt age 1-5 (rows). Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
 :::
 
 ::: {#fig-salft4}
@@ -248,7 +277,8 @@ lf.samples %>%
   group_by(year,gy,spat.unit) %>%
   median_qi(fec) %>%
   # remove years (2025) without data
-  filter(year < 2025) %>%
+  filter(year < 2025,
+         !fec == 0) %>%
   ggplot() +
   # minus 2 because gy = 2 is 1SW (smo.age is age = 0 and gy is age+1)
   geom_line(aes(y = fec, x = year, color = factor(gy-2))) +
@@ -257,5 +287,6 @@ lf.samples %>%
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
   labs(color = "#sea winters", y = "#eggs")
 ```
-Fecundity (number of eggs) of salmon over time by spatial unit and number of years spent at sea (sea winters, color scale). Predictions are shown for all sea winters salmon in a spatial unit existing over the time period despite some being rare.
+
+Fecundity (number of eggs) of salmon over time by spatial unit and number of years spent at sea (sea winters, color scale). Predictions are shown for all sea winters salmon in a spatial unit existing over the time period despite some being rare. In the Baltic sea, smolt age 2 in shown for Assessment Unit AU3 and smolt age 3 in AU1 and AU2, for the North Atlantic salmon, fecundity is marginalised over smolt ages.
 :::
