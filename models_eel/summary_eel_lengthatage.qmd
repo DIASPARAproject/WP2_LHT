@@ -133,7 +133,7 @@ data.schnu %>%
 
 ```{r}
 # Load samples 
-schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-11.RData"))$samples #v.11
+schnu.samples <- readRDS(paste0(home,"/models_eel/samples/schnu12_samples_2026-02-19.RData"))$samples #v.11
 
 # # Or source model code and mcmc (load libs and data)
 # t <- Sys.time()
@@ -169,10 +169,6 @@ pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 gelman.diag()
 # which psrf are > 1.01 
 pl$psrf[which(pl$psrf[, 1] > 1.1),] # bpar[8, 3] above 1.1
-# check traces of those psrf that are > 1.01
-schnu.samples[,node.sub[which(pl$psrf[, 1] > 1.1)]] %>%
-#schnu.samples[, node.sub[sample(1:length(node.sub), 16)], drop = FALSE] %>%
-mcmc_trace()
 # EES of par 
 pl <- schnu.samples[, node.sub[], drop = FALSE] %>%
 effectiveSize()

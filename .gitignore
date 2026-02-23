@@ -15,8 +15,8 @@
 
 # ---- report stuff ----
 report/*
-!report/*LHTmodels_v3.html
-!report/*LHTmodels_v3.qmd
+!report/*LHTmodels_v4.html
+!report/*LHTmodels_v4.qmd
 
 *samples
 *misc.R

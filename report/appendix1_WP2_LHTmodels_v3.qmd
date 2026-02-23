@@ -4,12 +4,16 @@ subtitle: "DIASPARA WP 2.2"
 author: "Viktor Thunell" 
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 format: 
-  html:
-    code-fold: true
-    code-summary: "Show code"
-    page-layout: full
-    embed-resources: true
+  docx:
     toc: true
+    number-sections: true
+    highlight-style: github
+  # html:
+  #   code-fold: true
+  #   code-summary: "Show code"
+  #   page-layout: full
+  #   embed-resources: true
+  #   toc: true
 knitr: 
   opts_chunk:
     fig.align: center
@@ -23,9 +27,9 @@ reference-location: document
 bibliography: diaspara.bib
 ---
 
-## Introduction 
+## Introduction
 
-Fish fecundity (the number of eegs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In Atlantic salmon, *Salmo salar*, where semelparity is common (and generally the case in the North Atlantic while iteroparity is dominating in Baltic sea populations), fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantitative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
+Fish fecundity (the number of eggs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In Atlantic salmon, *Salmo salar*, where semelparity is common (and generally the case in the North Atlantic while iteroparity is dominating in Baltic sea populations), fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantitative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
 
 The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase (sea winters, SW). These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
 
