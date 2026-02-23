@@ -17,6 +17,10 @@ format:
   toc-location: left
   toc-title: Summary
   toc-depth: 3
+  # docx:
+  #   toc: true
+  #   number-sections: true
+  #   highlight-style: github
 reference-location: document
 bibliography: diaspara.bib
 include-after-body: "footer.html"
