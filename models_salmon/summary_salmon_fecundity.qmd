@@ -177,7 +177,8 @@ fec.samples %>%
   facet_wrap(~.variable, scales = "free_x") +
   theme_minimal() +
   geom_vline(data = medianf, aes(xintercept = medf), color = "darkgrey", size = 0.5) +
-  theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) 
+  theme(axis.text.x = element_text(angle = 90,hjust = 1, size = rel(.75))) +
+  labs(y = "spatial unit", x = "est")
 ggsave(paste0(home, "/report/fec_ab.png"), width = 17, height = 14, units = "cm")
 
 dl <- data.fec %>%

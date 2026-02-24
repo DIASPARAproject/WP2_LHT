@@ -263,7 +263,7 @@ dfp %>%
   ggplot() +
   geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
   geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  labs(title = "L1", caption = "black box is region specific posterior", x = "L1") 
+  labs(title = "L1", x = "L1", y = "ecoregion") 
 ggsave(paste0(home, "/report/elaa_L1.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
@@ -271,7 +271,7 @@ dfp %>%
   ggplot() +
   geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
   geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  labs(title = "L2", caption = "black box is region specific posterior", x = "L2") 
+  labs(title = "L2", x = "L2", y = "ecoregion")  
 ggsave(paste0(home, "/report/elaa_L2.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
@@ -279,7 +279,7 @@ dfp %>%
   ggplot() +
   geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
   geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  labs(title = "k", caption = "black box is region specific posterior", x = "k") 
+  labs(title = "k", x = "k", y = "ecoregion") 
 ggsave(paste0(home, "/report/elaa_K.png"), width = 17, height = 17, units = "cm")
 
 dfp %>%
@@ -287,7 +287,7 @@ dfp %>%
   ggplot() +
   geom_boxplot(aes(x = val, y = ecoreg, group = main_bas), color = "grey", outliers = FALSE) + 
   geom_boxplot(aes(x = val, y = ecoreg), color = "black", outliers = FALSE, show.legend = FALSE, fill = NA, linewidth = 0.2) + 
-  labs(title = "P", caption = "black box is region specific posterior", x = "P") 
+  labs(title = "P", x = "P", y = "ecoregion") 
 ggsave(paste0(home, "/report/elaa_P.png"), width = 17, height = 17, units = "cm")
 
 cor_draws <- schnu.samples %>%

@@ -242,7 +242,7 @@ ggsave(paste0(home, "/report/salaa_poj.png"), width = 17, height = 14, units = "
 # cv of sig.l < 
 laa.samples %>%
   gather_draws(sig.l, sig.lj) %>%
-  summarise(cv = sd(.value) / mean(.value)))
+  summarise(cv = sd(.value) / mean(.value))
 
 # Sea age predictions
 dfl <- data.b %>%

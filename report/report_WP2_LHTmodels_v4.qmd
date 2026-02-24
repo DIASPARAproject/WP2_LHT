@@ -86,11 +86,11 @@ Parameters of the Schnute [@schnute1981] growth equation were allowed to vary by
 
 We used a normal likelihood for observed length $L_i$ of individual $i$ of $age_i$ based on convenience during model development:
 
-$L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$ 
+$$L_i \sim \text{Normal}(\mu_{L_i}, \sigma_L)$$
 
 where the expected length $\mu_i$ is defined by the Schnute growth function (assuming $P \neq 0, k > 0$, @schnute1981):
 
-$\mu_{L_i} = \Bigg(L1_i^{P_i} + (L2_i^{P_i} - L1_i^{P_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/P_i}$ 
+$$\mu_{L_i} = \Bigg(L1_i^{P_i} + (L2_i^{P_i} - L1_i^{P_i}) \frac{1 - \exp(-k_i (age_i - A1))}{1 - \exp(-k_i (A2 - A1))} \Bigg)^{1/P_i}$$
 
 where $A1$ and $A2$ are reference ages (in our case the minimum and maximum ages in the population) defined prior to estimation, $L1$ and $L2$ are estimated lengths at $A1$ and $A2$, $p$ is a shape parameter controlling curvature and $k$ is the growth coefficient.
 
@@ -224,11 +224,11 @@ Region-specific temperature information from the HydroSHEDS database [@lehner200
 #### Model description
 We used a Lognormal likelihood for $L_i$ of individual $i$ (i = 1,\dots,n_{obs}) this was to capture positive values and right‑skewed variability (this choice was supported by comparing WAIC [@watanabe2010] of a corresponding model based on a normal likelihood).
 
-$L_i \sim \text{LogNormal}(\mu_{L_{[i]}}, \sigma_L)$
+$$L_i \sim \text{LogNormal}(\mu_{L_{[i]}}, \sigma_L)$$
 
 where $\mu_{L_i}$ is the expected log-length for individual $i$ and $\sigma_L$ is the residual standard deviation on the log scale. In turn, log-length is predicted by:
 
-$\mu_{L_i} = \alpha_{j[i],year[i]} + b_{s,j}sex[i] + b_{T}T[i]$,
+$$\mu_{L_i} = \alpha_{j[i],year[i]} + b_{s,j}sex[i] + b_{T}T[i]$$,
 
 where $\alpha_{j,year}$ represents the intercept for region $j = 1,\dots,n_{j}$ in year $y$, $b_{s,j}$ is a region specific effect of sex, $b_t$ is the effect of temperature based on region specific mean temperature.
 
@@ -270,7 +270,7 @@ The hyperparameter values $\mu_{sl}, \sigma_{sl}, \mu_{bs}$ and $\sigma_{bs}$ ar
 | $R_\alpha$ | Correlation among regions | $\text{LKJ}(\eta = 2)$ ????|
 | $\Sigma_\alpha$  | Spatial covariance matrix for $\alpha$ | $D,R_\alpha,D$ |
 
-: Prior distributions for parameters in the eel length at silvering model. (\**Values are lognormal transformations of estimates in [-@durif2005]*)
+: Prior distributions for parameters in the eel length at silvering model. (\**Values are lognormal transformations of estimates in @durif2005*)
 :::
 
 The model was implemented in NIMBLE, and posterior distributions of model parameters were estimated using Hamiltonian Monte Carlo sampling. We used two chains with 1500 samples in each for convergence diagnostics to confirm that the MCMC chains had converged to a stationary distribution. Convergence was assessed by checking trace plots and Gelman–Rubin diagnostics [@gelman1992].
@@ -351,15 +351,15 @@ We separated the observations by growth phase and used two observation models si
 
 For salmon caught in their sea phase, observations i, length (total length in mm) was assumed to follow a normal distribution (as a first choice during model development):
 
-$L_{s,i} \sim \text{Normal}(\mu_{L_i,j[i],a[i],c[i],s[i],age_g[i]}, \sigma_{Ls})$
+$$L_{s,i} \sim \text{Normal}(\mu_{L_i,j[i],a[i],c[i],s[i],age_g[i]}, \sigma_{Ls})$$
 
 where $\mu_{L_i}$ is the expected length predicted by spatial unit (j), smolt age (a), cohort (c), sex (s), and growth year (age_g), and $\sigma_Ls$ is the residual observation error.
 
 We used a normal likelihood (based on convenience and ongoing model development) also for the freshwater observations:
 
-$L_{f,i} \sim \text{Normal}(mu_{Lj}, \sigma_{Lj})$
+$$L_{f,i} \sim \text{Normal}(mu_{Lj}, \sigma_{Lj})$$
 
-$\mu_{Lj} = L_{b,j[i]} + r_{j[i]}age_{g[i]}$
+$$\mu_{Lj} = L_{b,j[i]} + r_{j[i]}age_{g[i]}$$
 
 where $\sigma_{Lf}$ is the juvenile observation error.
 
@@ -538,7 +538,7 @@ Second, the intercept ($a$) and slope ($b$) of the log-linear model appear corre
 
 Further improvements to the explanatory power of the model could be made by adding biological predictors such as age, spawning history and body condition ([@reid2012, @deeyto2015]), although this would require information (e.g. age and weight) which is lacking for many of the data sets. Considering the possible improvements that could be made, the model appears to provide adequate predictions of fecundity ([@fig-fec_po1]). 
 
-Estimates of fecundity is used in the assessment models of both the working group on North Atlantic salmon (WGNAS) and the Assessment Working Group on Baltic Salmon and Trout (WGBAST) [@wgnas2025;@wbast2025]. As we lack temporally resolved fecundity data, the salmon models presented here can provide new, or improve, spatiotemporal fecundity estimates for these assessment models by combining our spatial model for fecundity at length with the spatiotemporal model for length at age [@nevoux2020]. In Appendix 1, we address this issue and calculate change in the reproductive potential of spawners over time.
+Estimates of fecundity is used in the assessment models of both the working group on North Atlantic salmon (WGNAS) and the Assessment Working Group on Baltic Salmon and Trout (WGBAST) [@wgnas2025;@wgbast2025]. As we lack temporally resolved fecundity data, the salmon models presented here can provide new, or improve, spatiotemporal fecundity estimates for these assessment models by combining our spatial model for fecundity at length with the spatiotemporal model for length at age [@nevoux2020]. In Appendix 1, we address this issue and calculate change in the reproductive potential of spawners over time.
 
 ::: {#fig-fec_ab}
 ![](fec_ab.png)
@@ -583,7 +583,7 @@ A pitfall of using data collected on large spatiotemporal scales is variation in
 
 ## Supplementary material
 
-Appendix 1, download the html version at [https://github.com/DIASPARAproject/WP2_LHT/tree/main/report].
+**Appendix 1** avaible as .html at [https://github.com/DIASPARAproject/WP2_LHT/tree/main/report].
 
 All model code and detailed summaries of model output are available at [https://github.com/DIASPARAproject/WP2_LHT/tree/main].
 
