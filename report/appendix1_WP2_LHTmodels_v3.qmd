@@ -29,7 +29,7 @@ bibliography: diaspara.bib
 
 ## Introduction
 
-Fish fecundity (the number of eggs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In Atlantic salmon, *Salmo salar*, where semelparity is common (and generally the case in the North Atlantic while iteroparity is dominating in Baltic sea populations), fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantitative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing, as in the case for the analysis of salmon fecundity in DIASPARA.
+Fish fecundity (the number of eggs per spawning female) is a key life history trait reflecting fitness resulting from evolutionary trade-offs and environmental conditions [@lambert2008]. In Atlantic salmon, *Salmo salar*, where semelparity is common (and generally the case in the North Atlantic while iteroparity is dominating in Baltic sea populations), fecundity becomes pivotal for individual reproductive potential and important for population dynamics [@crespi2002;@jonsson2017]. Fecundity is body size dependent with individual length being a suitable quantitative predictor  [@lambert2008]. Changes in the size of salmon returning to spawn can therefore be used to calculate a proxy for changes in their reproductive potential over time when temporally resolved fecundity data is missing [@nevoux2002], as in the case for the analysis of salmon fecundity in DIASPARA.
 
 The working group on North Atlantic salmon (WGNAS) uses information on fecundity to estimate egg deposition for spawners that spent one or multiple winters in their marine phase (sea winters, SW). These estimate are stock unit specific and can vary over time. Here, knowledge of spatiotemporal changes in fecundity is key as the reproductive potential of many stock units assessed by WGNAS is at historically low levels [@wgnas2025]. 
 
@@ -156,7 +156,7 @@ laa.samples_2 <- laa.samples[, node.sub[], drop = FALSE] %>%
   filter(spat.unit %in% unique(fec.samples$spat.unit)) %>%
   # filter out the most common smolt age per spatial unit and maximum ages
   filter(#smo.age == mosa[su,2],
-         gy <= masu[su,2])  %>%
+         gy <= masu[su,2]) %>%
   ungroup() %>%
   select(-sex,-su,-.iteration,-.chain )
 
@@ -170,7 +170,7 @@ lf.samples <- laa.samples_2 %>%
   # join in mcmc draws of a and b from fecundity model
   left_join(fec.samples,  by = c("spat.unit",".draw")) %>%
   mutate(length.lc = log(l.mu) - log(mean(l.mu)),
-         fec = exp(a + b * length.lc),
+         fecundity = exp(a + b * length.lc),
          year = coh + gy + 1998) %>%
   rename(length = l.mu)
 ```
@@ -191,7 +191,7 @@ Given the considerable change in fecundity resulting from changes in length in t
 
 lf.samples %>%
   filter(
-    # WGBAST assume 3 year old smolts in AU1 or 2, and then 2 year old smolts in AU 3 and 4.  
+    # WGBAST assume 3 year old smolt in AU1 or 2, and 2 year old smolts in AU 3 and 4.  
     !(spat.unit %in% c("Baltic.sea:AU-1","Baltic.sea:AU-2") & !smo.age == 3),
     !(spat.unit %in% c("Baltic.sea:AU-3","Baltic.sea:AU-4") & !smo.age == 2),
     gy == smo.age+2, # 1SW
@@ -202,8 +202,9 @@ lf.samples %>%
   geom_boxplot(aes(y = fec, x = factor(year)),
                outliers = FALSE, show.legend = FALSE) +
   facet_wrap(~spat.unit, scales = "free_y") +
+  scale_x_discrete(breaks = seq(min(lf.samples$year), max(lf.samples$year), by = 2)) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = rel(.75))) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
   labs(title = "1SW")
 ```
 
@@ -224,7 +225,8 @@ lf.samples %>%
                outliers = FALSE, show.legend = FALSE) +
   facet_wrap(~spat.unit, scales = "free_y") +
   theme_minimal() +
-  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) +
+  scale_x_discrete(breaks = seq(min(lf.samples$year), max(lf.samples$year), by = 2)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
   labs(title = "2SW")
 ```
 
@@ -247,8 +249,9 @@ lf.samples %>%
   geom_boxplot(aes(y = fec, x = factor(year)),
                outliers = FALSE, show.legend = FALSE) +
   facet_grid(spat.unit~SW, scales = "free") +
+  scale_x_discrete(breaks = seq(min(lf.samples$year), max(lf.samples$year), by = 2)) +
   theme_minimal() +
-  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) 
 ```
 
 Fecundity (number of eggs) of 3-5SW salmon over time by spatial unit in the Baltic sea for smolt age 2 in Assessment Unit AU3 and smolt age 3 in AU1 and AU2. Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
@@ -269,7 +272,7 @@ lf.samples %>%
   facet_grid(smo.age~spat.unit, scales = "free_y") +
   scale_x_discrete(breaks = seq(2002, 2024, by = 2)) +
   theme_minimal() +
-  theme(axis.text = element_text(angle = 90, hjust = 1, size = rel(.75))) 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = rel(.7))) 
 ```
 
 Fecundity (number of eggs) of 1 and 2SW salmon over time by North Atlantic spatial units (columns) and smolt age 1-5 (rows). Boxplots summarise the posterior draws for each year and spatial unit  where the center line is the median, boxes and whiskers show the IQR and 1.5 times IQR and outliers are excluded.
