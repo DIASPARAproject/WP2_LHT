@@ -1,6 +1,6 @@
 ---
-title: "Diaspara life history trait models"
-subtitle: "DIASPARA work package 2.2"
+title: "Salmon & eel life history trait models"
+subtitle: "DIASPARA task 2.2"
 author: "Viktor Thunell, Jan Dag Pohlmann, Rebecca Whitlock"
 date: last-modified
 date-format: "DD-MM-YYYY"

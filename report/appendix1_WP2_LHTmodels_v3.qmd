@@ -1,19 +1,19 @@
 ---
-title: "Salmon spatiotemporal fecundity estimates "
-subtitle: "DIASPARA WP 2.2"
+title: "Salmon & eel life history trait models - Spatiotemporal estimates of salmon fecundity"
+subtitle: "DIASPARA task 2.2 - Appendix 1"
 author: "Viktor Thunell" 
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 format: 
-  # docx:
-  #   toc: true
-  #   number-sections: true
-  #   highlight-style: github
-  html:
-    code-fold: true
-    code-summary: "Show code"
-    page-layout: full
-    embed-resources: true
+  docx:
     toc: true
+    number-sections: true
+    highlight-style: github
+  # html:
+  #   code-fold: true
+  #   code-summary: "Show code"
+  #   page-layout: full
+  #   embed-resources: true
+  #   toc: true
 knitr: 
   opts_chunk:
     fig.align: center
