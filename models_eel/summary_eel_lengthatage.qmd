@@ -75,6 +75,7 @@ data.schnu <- df.eel %>%
          hab = as.integer(factor(ser_hty_code)),
          temp.sc = (tmp_dc_uyr - mean(tmp_dc_uyr))/sd(tmp_dc_uyr)) 
 
+# hfhfgs
 ```
 
 ### Plot length at age data
